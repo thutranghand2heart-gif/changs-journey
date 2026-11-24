@@ -363,6 +363,48 @@ await step('B17 all 4 frames: memory-frame export + framed photo on a storybook 
   assert(new Set(pg.layers.filter((l) => l.frameId).map((l) => l.frameId)).size === 4, 'frames not saved');
 });
 
+await step('B18 V1.2.2 countdown: rail ≈88% of card, knob and sticker move together, sticker never clipped, natural sentence', async () => {
+  await go('#/j/demo-journey');
+  if (await page.locator('.opening').count()) await page.locator('.opening').getByRole('button').last().click({ timeout: 3000 }).catch(() => {});
+  await page.getByTestId('sleigh-countdown').scrollIntoViewIfNeeded();
+  const geo = () => page.evaluate(() => {
+    const card = document.querySelector('.countdown-card').getBoundingClientRect();
+    const rail = document.querySelector('[data-testid="sleigh-rail"]').getBoundingClientRect();
+    const knob = document.querySelector('[data-testid="sleigh-knob"]').getBoundingClientRect();
+    const th = document.querySelector('[data-testid="sleigh-thumb"]').getBoundingClientRect();
+    return { railPct: rail.width / card.width, knobP: (knob.left + knob.width / 2 - rail.left) / rail.width, p: +document.querySelector('[data-testid="sleigh-countdown"]').dataset.progress, inCard: th.left >= card.left - 0.5 && th.right <= card.right + 0.5, thumbL: th.left };
+  });
+  const g0 = await geo();
+  assert(g0.railPct >= 0.85 && g0.railPct <= 0.9, `rail ${g0.railPct}`);
+  const line = await page.getByTestId('countdown-line').innerText();
+  assert(!/🎄/u.test(line) && /\d/.test(line), `countdown line ${line}`);
+  const box = await page.getByTestId('sleigh-thumb').boundingBox();
+  for (const dx of [-400, 400]) {
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + dx, box.y + box.height / 2, { steps: 6 });
+    await page.waitForTimeout(80);
+    const g = await geo();
+    assert(Math.abs(g.knobP - g.p) < 0.02, `knob ${g.knobP} vs p ${g.p}`);
+    assert(g.p === (dx < 0 ? 0 : 1), `end not reached ${g.p}`);
+    assert(g.inCard, 'sticker clipped at end');
+    await page.mouse.up();
+    await page.waitForTimeout(800);
+    const back = await geo();
+    assert(Math.abs(back.p - g0.p) < 1e-3 && Math.abs(back.thumbL - g0.thumbL) < 1, 'did not return to the real position');
+  }
+  // dragging the knob on the rail moves the sticker too (one control)
+  const rail = await page.getByTestId('sleigh-rail').boundingBox();
+  await page.mouse.move(rail.x + rail.width * 0.5, rail.y + rail.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(rail.x + rail.width * 0.75, rail.y + rail.height / 2, { steps: 4 });
+  await page.waitForTimeout(80);
+  const g2 = await geo();
+  assert(Math.abs(g2.p - 0.75) < 0.03 && Math.abs(g2.knobP - g2.p) < 0.02 && g2.thumbL > g0.thumbL, `rail drag ${JSON.stringify(g2)}`);
+  await page.mouse.up();
+  await page.waitForTimeout(800);
+});
+
 await step('B14 landscape: Home, Storybook, Frames have no horizontal overflow; tree never blocks taps', async () => {
   await page.setViewportSize({ width: 844, height: 390 });
   for (const h of ['#/j/demo-journey', '#/j/demo-journey/storybook', '#/j/demo-journey/frames', '#/j/demo-journey/magic']) {

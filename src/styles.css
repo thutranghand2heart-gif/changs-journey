@@ -720,3 +720,29 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 .story-empty { text-align: center; }
 .book-cover.turning .book-inner { transform: none !important; opacity: 1 !important; }
 .magic .globe-art { width: min(100%, 400px); margin: 6px auto 0; } .magic .globe-art-wrap { padding: 8px 0 4px; }
+
+/* ───────── V1.2.2 — Trip Home refinement ───────── */
+/* Title wrapping per language (presentation only) */
+.hero-title .bt { display: inline; text-wrap: balance; hyphens: manual; }
+.hero-tree .hero-title { overflow-wrap: normal; text-wrap: balance; }
+.hero-title .bt-zh, .hero-title .bt-ko { word-break: keep-all; line-break: strict; }
+.hero-title .bt-zh { letter-spacing: 0.01em; }
+.hero-title .bt-vi, .hero-title .bt-en { word-break: normal; overflow-wrap: normal; }
+/* Hero: less empty space, still clear of the Dynamic Island (top bar already sits below the safe area) */
+.hero.hero-tree { margin-top: -6px; margin-bottom: -16px; }
+.hero-tree .hero-text { padding: 0 0 10px; }
+/* Countdown sentence: number inline, large */
+.countdown-card .countdown { font-size: 1.12rem; line-height: 1.35; margin: 0 0 6px; color: #FFF8EE; }
+.countdown-card .countdown .big-num { display: inline; font-size: 2.3rem; margin: 0 4px; vertical-align: -0.12em; line-height: 1; }
+/* Countdown rail: 88% of the card, one knob in sync with the sticker */
+.sleigh-countdown { margin-left: 0; margin-right: 0; }
+.sleigh-rail { touch-action: none; cursor: pointer; }
+.sleigh-rail::before { content: ''; position: absolute; left: -12px; right: -12px; top: -16px; bottom: -16px; }
+.sleigh-rail-done.settle, .rail-knob.settle { transition: width 650ms cubic-bezier(.2,.8,.2,1), left 650ms cubic-bezier(.2,.8,.2,1); }
+.rail-knob { position: absolute; top: 50%; width: 18px; height: 18px; border-radius: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle at 40% 35%, #FFF8EE, #E9CF96 60%, #B8955A); box-shadow: 0 0 0 3px rgba(243, 226, 184, 0.22), 0 2px 6px rgba(0, 0, 0, 0.4); z-index: 2; pointer-events: none; }
+.reduce-motion .sleigh-rail-done.settle, .reduce-motion .rail-knob.settle { transition: none; }
+.sleigh-labels { padding-top: 2px; }
+/* Tab bar: quieter selected state */
+.tabbar-art .art-icon.on { filter: drop-shadow(0 0 2px rgba(255, 236, 190, 0.35)); }
+.tabbar-art button.on { background: rgba(213, 180, 119, 0.14); box-shadow: inset 0 0 0 0.5px rgba(243, 226, 184, 0.45); color: #FFF8EE; }
+.tabbar { border-width: 0.5px; }

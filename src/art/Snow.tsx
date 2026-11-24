@@ -19,11 +19,32 @@ export function Snow({ density = 1, gold = true, burst = 0 }: { density?: number
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
-    const n = Math.round(55 * density + burst);
-    type P = { x: number; y: number; r: number; vy: number; vx: number; ph: number; layer: number; gold: boolean };
+    // V1.2.2: small, soft flakes with depth — far flakes are tiny, faint and slow; near flakes a little larger and clearer.
+    // Drawn from a pre-blurred sprite so edges are soft (no hard white dots).
+    const n = Math.round(70 * density + burst);
+    const sprite = document.createElement('canvas');
+    const SR = 16;
+    sprite.width = sprite.height = SR * 2;
+    const sc = sprite.getContext('2d')!;
+    const g = sc.createRadialGradient(SR, SR, 0, SR, SR, SR);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.35, 'rgba(255,255,255,0.75)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    sc.fillStyle = g;
+    sc.fillRect(0, 0, SR * 2, SR * 2);
+    type P = { x: number; y: number; r: number; vy: number; ph: number; sway: number; a: number; gold: boolean };
     const ps: P[] = Array.from({ length: n }, (_, i) => {
-      const layer = i % 3;
-      return { x: Math.random() * w, y: burst ? Math.random() * h * 0.6 : Math.random() * h, r: 0.8 + layer * 0.9 + Math.random() * 0.8, vy: 0.25 + layer * 0.3 + Math.random() * 0.2, vx: 0, ph: Math.random() * 6.28, layer, gold: gold && i % 9 === 0 };
+      const depth = Math.random() ** 1.6; // most flakes far away
+      return {
+        x: Math.random() * w,
+        y: burst ? Math.random() * h * 0.6 : Math.random() * h,
+        r: 0.9 + depth * 2.1, // sprite radius incl. soft edge → visible core ≈ 0.4–1.2px
+        vy: 0.18 + depth * 0.5 + Math.random() * 0.08,
+        ph: Math.random() * 6.28,
+        sway: 0.1 + depth * 0.35,
+        a: 0.16 + depth * 0.42 + Math.random() * 0.06,
+        gold: gold && i % 11 === 0,
+      };
     });
     let raf = 0;
     let last = performance.now();
@@ -34,16 +55,23 @@ export function Snow({ density = 1, gold = true, burst = 0 }: { density?: number
       for (const p of ps) {
         p.ph += 0.01 * dt;
         p.y += p.vy * dt;
-        p.x += Math.sin(p.ph) * 0.25 * (p.layer + 1) * dt;
-        if (p.y > h + 4) {
-          p.y = -4;
+        p.x += Math.sin(p.ph) * p.sway * dt;
+        if (p.y > h + 6) {
+          p.y = -6;
           p.x = Math.random() * w;
         }
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, 6.283);
-        ctx.fillStyle = p.gold ? `rgba(229,200,140,${0.35 + 0.25 * Math.sin(p.ph * 3)})` : `rgba(255,255,255,${0.35 + p.layer * 0.18})`;
-        ctx.fill();
+        if (p.gold) {
+          ctx.globalAlpha = 1;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r * 0.45, 0, 6.283);
+          ctx.fillStyle = `rgba(229,200,140,${0.25 + 0.2 * Math.sin(p.ph * 3)})`;
+          ctx.fill();
+        } else {
+          ctx.globalAlpha = p.a;
+          ctx.drawImage(sprite, p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
+        }
       }
+      ctx.globalAlpha = 1;
       raf = requestAnimationFrame(tick);
     };
     const vis = () => {

@@ -38,15 +38,22 @@ export function CountdownSleigh({ journey: j, progress, leftLabel, rightLabel }:
   const track = useRef<HTMLDivElement | null>(null);
   const [w, setW] = useState(0);
   const [aspect, setAspect] = useState(2.7);
-  const [drag, setDrag] = useState<number | null>(null); // x while dragging
-  const start = useRef<{ px: number; x: number } | null>(null);
+  const [drag, setDrag] = useState<number | null>(null); // progress 0..1 while dragging (preview only)
+  const start = useRef<{ px: number; p: number; mode: 'sticker' | 'rail' } | null>(null);
   const lastSpark = useRef(0);
   const [sparks, setSparks] = useState<{ id: number; x: number; y: number; dx: number; s: number }[]>([]);
-  const thumbW = url ? Math.min(340, Math.max(200, w * 0.8)) : 56; // V1.2: ~35% larger than 1.1
+  // V1.2.2 geometry — one control, two views of the same progress value p:
+  //  • the visual rail spans 88% of the card width, centred, the knob sits at p along it;
+  //  • the sticker travels the real free range [0, w − thumbW] at the same p, so it is never clipped at either end.
+  const thumbW = url ? Math.round(Math.min(300, Math.max(180, w * 0.62))) : 56;
   const thumbH = url ? thumbW / aspect : 30;
   const maxX = Math.max(0, w - thumbW);
-  const realX = progress * maxX;
-  const x = drag ?? realX;
+  const cardPad = 16; // .countdown-card horizontal padding — the rail is measured against the whole card
+  const railW = Math.max(1, Math.min(w - 8, (w + cardPad * 2) * 0.88));
+  const railL = (w - railW) / 2;
+  const p = drag ?? progress;
+  const x = p * maxX;
+  const railTop = thumbH + 14;
 
   useEffect(() => {
     const el = track.current;
@@ -63,57 +70,64 @@ export function CountdownSleigh({ journey: j, progress, leftLabel, rightLabel }:
     if (now - lastSpark.current < 45) return;
     lastSpark.current = now;
     const id = now + Math.random();
-    const p = { id, x: atX + thumbW * 0.12, y: thumbH * (0.35 + Math.random() * 0.5), dx: -10 - Math.random() * 26, s: 3 + Math.random() * 4 };
-    setSparks((a) => [...a.slice(-28), p]);
-    setTimeout(() => setSparks((a) => a.filter((q) => q.id !== id)), 950);
+    const q = { id, x: atX + thumbW * 0.12, y: thumbH * (0.35 + Math.random() * 0.5), dx: -10 - Math.random() * 26, s: 3 + Math.random() * 4 };
+    setSparks((arr) => [...arr.slice(-28), q]);
+    setTimeout(() => setSparks((arr) => arr.filter((r) => r.id !== id)), 950);
   };
 
-  const onDown = (e: PointerEvent) => {
+  const clamp = (v: number) => Math.min(1, Math.max(0, v));
+  const down = (mode: 'sticker' | 'rail') => (e: PointerEvent) => {
     (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
-    start.current = { px: e.clientX, x };
-    setDrag(x);
+    const box = track.current?.getBoundingClientRect();
+    const p0 = mode === 'rail' && box ? clamp((e.clientX - box.left - railL) / railW) : p;
+    start.current = { px: e.clientX, p: p0, mode };
+    setDrag(p0);
   };
-  const onMove = (e: PointerEvent) => {
-    if (!start.current) return;
-    const nx = Math.min(maxX, Math.max(0, start.current.x + (e.clientX - start.current.px)));
-    setDrag(nx);
-    spark(nx);
+  const move = (e: PointerEvent) => {
+    const st = start.current;
+    if (!st) return;
+    const dx = e.clientX - st.px;
+    // Dragging the sticker moves it 1:1 with the finger; dragging the knob follows the finger along the rail.
+    const np = clamp(st.p + dx / (st.mode === 'sticker' ? Math.max(1, maxX) : railW));
+    setDrag(np);
+    spark(np * maxX);
   };
-  const onUp = () => {
+  const up = () => {
     start.current = null;
     setDrag(null); // glides back to the real countdown position (CSS transition)
   };
+  const handlers = { onPointerMove: move, onPointerUp: up, onPointerCancel: up };
+  const settle = drag == null ? 'settle' : '';
 
   return (
-    <div className="sleigh-countdown" data-testid="sleigh-countdown">
-      <div className="sleigh-track" ref={track} style={{ height: thumbH + 26 }}>
-        <div className="sleigh-lane" style={{ height: thumbH + 4 }} aria-hidden="true" />
-        <div className="sleigh-rail" style={{ left: thumbW / 2, right: thumbW / 2, top: thumbH + 12 }}>
-          <div className="sleigh-rail-done" style={{ width: `${progress * 100}%` }} />
+    <div className="sleigh-countdown" data-testid="sleigh-countdown" data-progress={p.toFixed(3)}>
+      <div className="sleigh-track" ref={track} style={{ height: railTop + 22 }}>
+        <div className="sleigh-lane" style={{ height: thumbH + 6 }} aria-hidden="true" />
+        <div className="sleigh-rail" data-testid="sleigh-rail" style={{ left: railL, width: railW, top: railTop }} {...handlers} onPointerDown={down('rail')}>
+          <div className={`sleigh-rail-done ${settle}`} style={{ width: `${p * 100}%` }} />
           <span className="rail-mark start" />
           <span className="rail-mark end">★</span>
+          <span className={`rail-knob ${settle}`} data-testid="sleigh-knob" style={{ left: `${p * 100}%` }} aria-hidden="true" />
         </div>
-        {sparks.map((p) => (
-          <span key={p.id} className="stardust" style={{ left: p.x, top: p.y, width: p.s, height: p.s, ['--dx' as any]: `${p.dx}px` }} />
+        {sparks.map((q) => (
+          <span key={q.id} className="stardust" style={{ left: q.x, top: q.y, width: q.s, height: q.s, ['--dx' as any]: `${q.dx}px` }} />
         ))}
-        {drag != null && maxX > 0 && (() => {
-          const pv = previewDate(j, drag / maxX);
+        {drag != null && (() => {
+          const pv = previewDate(j, drag);
           return (
-            <span className="sleigh-preview" data-testid="sleigh-preview" style={{ left: Math.min(Math.max(drag + thumbW / 2, 74), w - 74) }}>
+            <span className="sleigh-preview" data-testid="sleigh-preview" style={{ left: Math.min(Math.max(railL + drag * railW, 74), w - 74) }}>
               {fmtShort(pv.date)} · {pv.left ? t('còn {0} ngày', pv.left) : t('Ngày khởi hành')}
             </span>
           );
         })()}
         <button
           type="button"
-          className={`sleigh-thumb ${drag == null ? 'settle' : ''}`}
+          className={`sleigh-thumb ${settle}`}
           data-testid="sleigh-thumb"
           aria-label={t('Xe tuần lộc đếm ngược — kéo để chơi, thả ra sẽ quay về đúng vị trí')}
           style={{ width: thumbW, height: thumbH, transform: `translateX(${x}px)` }}
-          onPointerDown={onDown}
-          onPointerMove={onMove}
-          onPointerUp={onUp}
-          onPointerCancel={onUp}
+          onPointerDown={down('sticker')}
+          {...handlers}
         >
           {url ? (
             <img src={url} alt="" draggable={false} onLoad={(e: any) => e.target.naturalWidth && setAspect(e.target.naturalWidth / e.target.naturalHeight)} />
@@ -126,7 +140,7 @@ export function CountdownSleigh({ journey: j, progress, leftLabel, rightLabel }:
           )}
         </button>
       </div>
-      <div className="sleigh-labels xsmall muted">
+      <div className="sleigh-labels xsmall muted" style={{ paddingLeft: Math.max(0, railL - 4), paddingRight: Math.max(0, railL - 4) }}>
         <span>{leftLabel}</span>
         <span>{rightLabel}</span>
       </div>

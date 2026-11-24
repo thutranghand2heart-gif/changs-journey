@@ -21,7 +21,8 @@ import { tokensFor } from '../../lib/themes';
 import { hotelOf } from '../../lib/wallet';
 import { LanguageButton } from '../../ui/Language';
 import { getLang, t } from '../../lib/i18n';
-import { Tx, TxNudge } from '../../ui/contentTx';
+import { Tx, TxNudge, useCt } from '../../ui/contentTx';
+import { BalancedTitle } from '../../ui/BalancedTitle';
 import { CountdownSleigh, countdownProgress } from './CountdownSleigh';
 import { cityName } from '../../lib/cityNames';
 
@@ -35,6 +36,7 @@ export function JourneyHome() {
   const { reduced, settings } = useApp();
   const toast = useToast();
   const s = j.settings;
+  const ct = useCt();
   const motionOff = reduced || s.animations === 'off';
   const isXmas = s.theme === 'christmas-emerald';
   const treeArt = useArtUrl('tree', 'thumb');
@@ -89,7 +91,7 @@ export function JourneyHome() {
         <section className={`hero ${isXmas && treeArt ? 'hero-tree' : ''}`} style={isXmas && treeArt ? ({ '--tree-w': `${Math.round(52 * (s.treeArt?.scale ?? 1))}%` } as any) : undefined}>
           <div className="hero-text">
             <p className="hero-kicker">{j.subtitle ? <Tx s="journeys" r={j} f="subtitle" /> : j.destinations.join(' · ')}</p>
-            <h1 className="hero-title display"><Tx s="journeys" r={j} f="title" /></h1>
+            <h1 className="hero-title display"><BalancedTitle text={ct('journeys', j, 'title')} lang={getLang()} /></h1>
             <p className="hero-dates"><LuCalendar size={14} /> {fmtShort(j.startDate)} – {fmtShort(j.endDate)}, {j.endDate.slice(0, 4)}</p>
           </div>
           {isXmas && treeArt && (
@@ -101,7 +103,7 @@ export function JourneyHome() {
 
         <section className="countdown-card" aria-label={t('Đếm ngược')}>
           {today.phase === 'before' && (
-            <p className="countdown"><b className="big-num">{today.daysUntil}</b> {' '}{t('ngày nữa')}{isXmas && j.destinations[0] ? t(' là đến {0} 🎄', cityName(j.destinations[0], getLang()) ?? j.destinations[0]) : ''}</p>
+            <CountdownLine days={today.daysUntil} city={j.destinations[0] ? cityName(j.destinations[0], getLang()) ?? j.destinations[0] : ''} />
           )}
           <CountdownSleigh
             journey={j}
@@ -211,5 +213,17 @@ export function JourneyHome() {
         </div>
       )}
     </div>
+  );
+}
+
+/** “Còn 26 ngày nữa là đến chuyến đi …” / “距离…之旅还有26天” — natural word order per language; the day count
+ * is always computed (never stored) and shown large inline. */
+function CountdownLine({ days, city }: { days: number; city: string }) {
+  const tpl = city ? t('Còn {0} ngày nữa là đến chuyến đi {1}') : t('Còn {0} ngày nữa');
+  const [a, b = ''] = tpl.replace('{1}', city).split('{0}');
+  return (
+    <p className="countdown" data-testid="countdown-line">
+      {a}<b className="big-num">{days}</b>{b}
+    </p>
   );
 }
