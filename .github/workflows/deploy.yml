@@ -1,0 +1,62 @@
+name: Build & deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install (exact pinned versions)
+        run: npm install --no-audit --no-fund
+      - name: Privacy & secrets guard (repository)
+        run: npm run check:repo
+        env:
+          PRIVACY_GUARD_KEY: ${{ secrets.PRIVACY_GUARD_KEY }}
+      - name: Type check
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Verify build output
+        run: |
+          for f in index.html app.js app.css sw.js manifest.webmanifest icons/icon-192.png icons/icon-512.png icons/apple-touch-icon.png icons/icon-maskable-512.png; do
+            test -s "dist/$f" || { echo "missing dist/$f"; exit 1; }
+          done
+          ! grep -q '__BUILD__' dist/index.html dist/sw.js
+          ! grep -Eq '(src|href)="/' dist/index.html   # all asset paths must be relative for /changs-journey/
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+      - name: Privacy & secrets guard (deployment artifact)
+        run: npm run check:repo -- --dist dist
+        env:
+          PRIVACY_GUARD_KEY: ${{ secrets.PRIVACY_GUARD_KEY }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

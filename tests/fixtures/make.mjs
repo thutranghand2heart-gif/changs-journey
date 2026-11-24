@@ -1,0 +1,11 @@
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300"><rect width="600" height="300" fill="#fff"/><text x="20" y="50" font-size="28" font-family="sans-serif">TEST TICKET (fixture, not real)</text>${Array.from({length:12},(_,i)=>`<rect x="${400+((i*37)%150)}" y="${100+((i*53)%150)}" width="20" height="20"/>`).join('')}</svg>`;
+writeFileSync('tests/fixtures/ticket.svg', svg);
+execFileSync('rsvg-convert', ['-o', 'tests/fixtures/ticket.png', 'tests/fixtures/ticket.svg']);
+const pdf = await PDFDocument.create();
+const page = pdf.addPage([400, 300]);
+page.drawText('TEST PDF TICKET (fixture)', { x: 20, y: 250, size: 18, font: await pdf.embedFont(StandardFonts.Helvetica), color: rgb(0, 0, 0) });
+writeFileSync('tests/fixtures/ticket.pdf', await pdf.save());
+console.log('fixtures ok');

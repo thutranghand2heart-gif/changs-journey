@@ -1,0 +1,29 @@
+{
+  "name": "changs-journey",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Những bước chân của Chang — Every step has a story.",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "tsx --test tests/unit/*.test.ts",
+    "build": "node scripts/build.mjs",
+    "check:repo": "node scripts/check-repo.mjs",
+    "serve": "node scripts/serve.mjs dist 4173",
+    "e2e": "node tests/e2e/run.mjs",
+    "icons": "tsx scripts/icons.tsx public/icons"
+  },
+  "dependencies": {
+    "jszip": "3.10.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-icons": "5.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.3",
+    "esbuild": "0.28.2",
+    "tsx": "4.23.12",
+    "typescript": "6.0.3"
+  },
+  "engines": { "node": ">=20" }
+}

@@ -1,0 +1,14 @@
+node_modules
+dist/
+tests/e2e/shots/
+tests/e2e/results.json
+*.changbackup
+*.zip
+.env
+.env.*
+.DS_Store
+
+# private journey import files (never commit; demo fixture is fictional)
+*.changjourney
+*.changjourney.json
+!tests/fixtures/demo-journey.changjourney.json

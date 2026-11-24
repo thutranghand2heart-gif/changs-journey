@@ -1,0 +1,241 @@
+{
+ "format": "chang-journey-import",
+ "version": 1,
+ "createdAt": "2030-01-01T00:00:00.000Z",
+ "journey": {
+  "id": "demo-journey",
+  "title": "Winter Lights Demo",
+  "subtitle": "Fictional test journey",
+  "destinations": [
+   "Demo City"
+  ],
+  "startDate": "2031-01-10",
+  "endDate": "2031-01-12",
+  "timeZone": "Asia/Tokyo",
+  "currency": "JPY",
+  "notes": "",
+  "coverEmoji": "🎄",
+  "pinned": true,
+  "archived": false,
+  "createdAt": "2030-01-01T00:00:00.000Z",
+  "updatedAt": "2030-01-01T00:00:00.000Z",
+  "seedKey": "demo-2031",
+  "coverArt": "xmas-skyline",
+  "hotel": {
+   "name": "Demo Hotel",
+   "addressZh": "演示市示例路1号",
+   "addressEn": "1 Example Street, Demo City",
+   "verified": false
+  },
+  "settings": {
+   "theme": "christmas-emerald",
+   "fontStyle": "storybook",
+   "animations": "full",
+   "openingAnimation": true,
+   "decorations": true,
+   "sound": false,
+   "backgrounds": {},
+   "rotateBackgrounds": []
+  },
+  "transportNotes": [
+   "Demo transport note."
+  ]
+ },
+ "days": [
+  {
+   "id": "demo-d1",
+   "journeyId": "demo-journey",
+   "index": 1,
+   "date": "2031-01-10",
+   "title": "Demo day 1",
+   "freeDay": false,
+   "privateByDefault": false,
+   "notes": "Check the demo booking page.",
+   "remindFrom": "2031-01-01"
+  },
+  {
+   "id": "demo-d2",
+   "journeyId": "demo-journey",
+   "index": 2,
+   "date": "2031-01-11",
+   "title": "Demo day 2",
+   "freeDay": true,
+   "privateByDefault": true,
+   "notes": ""
+  },
+  {
+   "id": "demo-d3",
+   "journeyId": "demo-journey",
+   "index": 3,
+   "date": "2031-01-12",
+   "title": "Demo day 3",
+   "freeDay": false,
+   "privateByDefault": false,
+   "notes": ""
+  }
+ ],
+ "activities": [
+  {
+   "id": "demo-a1",
+   "journeyId": "demo-journey",
+   "dayId": "demo-d1",
+   "order": 1,
+   "timeZone": "Asia/Ho_Chi_Minh",
+   "timeZoneLabel": "Home time (UTC+7)",
+   "notes": "",
+   "status": "tentative",
+   "kind": "flight",
+   "poseIds": [],
+   "documentIds": [],
+   "expenseIds": [],
+   "photoBlobIds": [],
+   "title": "Depart home",
+   "start": "07:00"
+  },
+  {
+   "id": "demo-a2",
+   "journeyId": "demo-journey",
+   "dayId": "demo-d1",
+   "order": 2,
+   "timeZone": "Asia/Tokyo",
+   "timeZoneLabel": "Demo time (UTC+9)",
+   "notes": "",
+   "status": "tentative",
+   "kind": "sight",
+   "poseIds": [],
+   "documentIds": [],
+   "expenseIds": [],
+   "photoBlobIds": [],
+   "title": "Riverside — visit 1",
+   "start": "16:00",
+   "end": "17:30",
+   "placeId": "demo-pl-river",
+   "nameZh": "演示河畔"
+  },
+  {
+   "id": "demo-a3",
+   "journeyId": "demo-journey",
+   "dayId": "demo-d1",
+   "order": 3,
+   "timeZone": "Asia/Tokyo",
+   "timeZoneLabel": "Demo time (UTC+9)",
+   "notes": "",
+   "status": "tentative",
+   "kind": "sight",
+   "poseIds": [],
+   "documentIds": [],
+   "expenseIds": [],
+   "photoBlobIds": [],
+   "title": "Riverside — visit 2",
+   "start": "20:00",
+   "end": "21:00",
+   "placeId": "demo-pl-river",
+   "nameZh": "演示河畔"
+  },
+  {
+   "id": "demo-a4",
+   "journeyId": "demo-journey",
+   "dayId": "demo-d3",
+   "order": 4,
+   "timeZone": "Asia/Tokyo",
+   "timeZoneLabel": "Demo time (UTC+9)",
+   "notes": "",
+   "status": "tentative",
+   "kind": "hotel",
+   "poseIds": [],
+   "documentIds": [],
+   "expenseIds": [],
+   "photoBlobIds": [],
+   "title": "Hotel checkout",
+   "start": "07:20"
+  },
+  {
+   "id": "demo-a5",
+   "journeyId": "demo-journey",
+   "dayId": "demo-d3",
+   "order": 5,
+   "timeZone": "Asia/Tokyo",
+   "timeZoneLabel": "Demo time (UTC+9)",
+   "notes": "",
+   "status": "tentative",
+   "kind": "flight",
+   "poseIds": [],
+   "documentIds": [],
+   "expenseIds": [],
+   "photoBlobIds": [],
+   "title": "Demo flight DEMO 001 departs",
+   "start": "12:00",
+   "placeId": "demo-pl-airport"
+  }
+ ],
+ "places": [
+  {
+   "id": "demo-pl-river",
+   "journeyId": "demo-journey",
+   "name": "Demo Riverside",
+   "nameZh": "演示河畔",
+   "pinyin": "Yǎnshì Hépàn",
+   "aliases": [
+    "riverside walk"
+   ],
+   "city": "Demo City",
+   "addressZh": "演示市河畔路8号",
+   "lat": 35,
+   "lng": 135,
+   "wishlist": false,
+   "notes": ""
+  },
+  {
+   "id": "demo-pl-airport",
+   "journeyId": "demo-journey",
+   "name": "Demo Airport",
+   "aliases": [],
+   "city": "Demo City",
+   "addressZh": "演示机场",
+   "lat": 35.2,
+   "lng": 135.3,
+   "wishlist": false,
+   "notes": ""
+  }
+ ],
+ "docs": [
+  {
+   "id": "demo-doc-flight",
+   "journeyId": "demo-journey",
+   "title": "Demo flight",
+   "category": "flight",
+   "bookingStatus": "info-entered",
+   "activityIds": [],
+   "details": "Fictional",
+   "privacy": "normal",
+   "createdAt": "2030-01-01T00:00:00.000Z"
+  }
+ ],
+ "expenses": [
+  {
+   "id": "demo-e1",
+   "journeyId": "demo-journey",
+   "title": "Demo photo package",
+   "category": "photo",
+   "dayId": "demo-d1",
+   "currency": "JPY",
+   "estimate": 10000,
+   "payments": [],
+   "receiptBlobIds": [],
+   "notes": "Deposit 3000 requested, not paid.",
+   "createdAt": "2030-01-01T00:00:00.000Z"
+  }
+ ],
+ "poses": [],
+ "checklist": [
+  {
+   "id": "demo-ck1",
+   "journeyId": "demo-journey",
+   "group": "Before",
+   "text": "Pack",
+   "done": false,
+   "order": 1
+  }
+ ],
+ "sha256": "cbd473cb95684aea7511646cc6283278a4acbfbd3315d895f167abe2a03263e9"
+}
