@@ -52,6 +52,7 @@ export function WalletTab() {
           <span className="grow">
             <b>{d.privacy === 'private' ? t('Giấy tờ riêng tư') : d.title}</b>
             {d.category === 'flight' && d.flight && <span className="xsmall block">{flightLine(d.flight)}</span>}
+            {d.category === 'train' && d.train && <span className="xsmall block">{[d.train.trainNumber, d.train.date, [d.train.depStation, d.train.depTime].filter(Boolean).join(' '), '→', [d.train.arrStation, d.train.arrTime].filter(Boolean).join(' ')].filter(Boolean).join(' · ').replace(' · → · ', ' → ')}</span>}
             <span className="muted xsmall block">
               {t(BOOKING_LABEL[d.bookingStatus])}
               {d.paymentStatus && d.paymentStatus !== 'unknown' ? ` · ${t(PAYMENT_LABEL[d.paymentStatus])}` : ''} · {n ? t('{0} tệp đính kèm', n) : t('chưa có tệp')}
@@ -356,6 +357,7 @@ function RecordSheet({ d, docs, atts, days, acts, onClose, onView }: { d: Wallet
 
             {f.category === 'flight' && <FlightEditor d={f} onChange={setF} />}
             {f.category === 'hotel' && <HotelFields d={f} onChange={setF} />}
+            {f.category === 'train' && <TrainFields d={f} onChange={setF} />}
 
             <Field label={t('Ngày')}>
               <select value={f.dayId ?? ''} onChange={(e: any) => setF({ ...f, dayId: e.target.value || undefined })}>
@@ -424,6 +426,34 @@ function RecordSheet({ d, docs, atts, days, acts, onClose, onView }: { d: Wallet
       />
       {pickExisting && <PickAttachments d={d} atts={atts} docs={docs} onClose={() => setPickExisting(false)} />}
     </Sheet>
+  );
+}
+
+function TrainFields({ d, onChange }: { d: WalletDoc; onChange: (d: WalletDoc) => void }) {
+  const tr0 = d.train ?? {};
+  const set = (k: keyof NonNullable<WalletDoc['train']>) => (e: any) => onChange({ ...d, train: { ...tr0, [k]: e.target.value || undefined } });
+  return (
+    <div className="card stack-s" data-testid="train-fields">
+      <h4>🚄 {t('Thông tin chuyến tàu')}</h4>
+      <div className="row gap">
+        <Field label={t('Số hiệu tàu')}><input value={tr0.trainNumber ?? ''} onChange={set('trainNumber')} autoCapitalize="characters" placeholder="G7001" /></Field>
+        <Field label={t('Ngày')}><input type="date" value={tr0.date ?? ''} onChange={set('date')} /></Field>
+      </div>
+      <div className="row gap">
+        <Field label={t('Ga đi')}><input value={tr0.depStation ?? ''} onChange={set('depStation')} /></Field>
+        <Field label={t('Giờ đi (giờ địa phương)')}><input type="time" value={tr0.depTime ?? ''} onChange={set('depTime')} /></Field>
+      </div>
+      <div className="row gap">
+        <Field label={t('Ga đến')}><input value={tr0.arrStation ?? ''} onChange={set('arrStation')} /></Field>
+        <Field label={t('Giờ đến (giờ địa phương)')}><input type="time" value={tr0.arrTime ?? ''} onChange={set('arrTime')} /></Field>
+      </div>
+      <div className="row gap">
+        <Field label={t('Toa')}><input value={tr0.carriage ?? ''} onChange={set('carriage')} /></Field>
+        <Field label={t('Ghế')}><input value={tr0.seat ?? ''} onChange={set('seat')} /></Field>
+      </div>
+      <Field label={t('Mã đặt chỗ')}><input value={tr0.bookingRef ?? ''} onChange={set('bookingRef')} autoCapitalize="characters" /></Field>
+      <p className="muted xsmall">{t('Chỉ những gì bạn tự nhập — ứng dụng không tra cứu lịch tàu.')}</p>
+    </div>
   );
 }
 

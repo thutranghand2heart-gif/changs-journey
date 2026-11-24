@@ -16,7 +16,7 @@ export const FIELD_REGISTRY: { store: StoreName; fields: string[]; category: str
   { store: 'memories', fields: ['title', 'body'], category: 'memories' },
   { store: 'food', fields: ['dish', 'place', 'city', 'notes'], category: 'food' },
   { store: 'expenses', fields: ['title', 'notes'], category: 'budget' },
-  { store: 'poses', fields: ['title', 'description', 'notes'], category: 'poses' },
+  { store: 'poses', fields: ['title', 'description', 'notes', 'hands', 'body', 'camera', 'framing', 'lighting'], category: 'poses' },
   { store: 'docs', fields: ['title'], category: 'wallet' },
   { store: 'world', fields: ['name', 'story'], category: 'world' },
 ];
@@ -90,9 +90,9 @@ export const buildTxMap = (rows: ContentTranslation[]): TxMap => new Map(rows.ma
 export function displayText(map: TxMap, store: StoreName, rec: any, field: string, lang: UiLang): { text: string | undefined; translated: boolean; stale: boolean } {
   const orig = getField(rec, field);
   if (!orig || !rec?.id) return { text: orig, translated: false, stale: false };
-  if (detectLang(orig) === lang) return { text: orig, translated: false, stale: false };
   const tr = map.get(txId(store, rec.id, field, lang));
-  if (!tr) return { text: orig, translated: false, stale: false };
+  // a saved translation wins even when the text merely looks like this language (mixed text such as "Tàu 上海站 → 苏州站")
+  if (!tr || (detectLang(orig) === lang && tr.srcHash !== hashText(orig.trim()))) return { text: orig, translated: false, stale: false };
   if (tr.srcHash !== hashText(orig.trim())) return { text: orig, translated: false, stale: true };
   return { text: tr.text, translated: true, stale: false };
 }

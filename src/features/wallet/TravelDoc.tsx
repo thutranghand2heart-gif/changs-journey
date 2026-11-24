@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { LuPencil, LuFileText } from 'react-icons/lu';
+import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { LuPencil, LuFileText, LuMaximize2, LuCopy, LuX } from 'react-icons/lu';
 import type { Attachment, FlightInfo, TravelCardSettings, WalletDoc } from '../../db/schema';
 import { updateJourney } from '../../db/repo';
-import { Field, go, PageHeader, useStore } from '../../ui/core';
+import { Field, go, PageHeader, useStore, useToast } from '../../ui/core';
+import { copyText } from '../../lib/util';
 import { useJourney } from '../journey/JourneyShell';
 import { publicDocs } from '../../lib/search';
 import { attIds, hotelOf } from '../../lib/wallet';
@@ -46,6 +48,18 @@ export function TravelDocPage() {
   const [lang, setLangState] = useState<L>(() => { try { return (localStorage.getItem(CARD_LANG_KEY) as L) || 'zh'; } catch { return 'zh'; } });
   const setCardLang = (l: L) => { setLangState(l); try { localStorage.setItem(CARD_LANG_KEY, l); } catch { /* */ } };
   const [detail, setDetail] = useState(false);
+  const [present, setPresent] = useState(false);
+  const [scale, setScale] = useState<number>(() => { try { return Number(localStorage.getItem('chang-travelcard-scale')) || 1; } catch { return 1; } });
+  const setScaleP = (v: number) => { setScale(v); try { localStorage.setItem('chang-travelcard-scale', String(v)); } catch { /* */ } };
+  const cardRef = useRef<HTMLElement | null>(null);
+  const toast = useToast();
+  const copyCard = async () => {
+    const el = cardRef.current?.cloneNode(true) as HTMLElement | undefined;
+    if (!el) return;
+    el.querySelectorAll('.no-print').forEach((x) => x.remove());
+    const text = (el.innerText || el.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+    toast((await copyText(text)) ? t('Đã sao chép') : t('Không sao chép được'));
+  };
   const [viewing, setViewing] = useState<Attachment | null>(null);
   const L = (k: string) => L10N[k][lang];
 
@@ -99,8 +113,9 @@ export function TravelDocPage() {
           label = pick.text;
         }
         // generic entries ("Lunch", "Dinner") with no local name add nothing for an officer — leave them out
-        if (a.kind === 'meal' && !(lang === 'zh' && (a.nameZh || p?.nameZh)) && !inCard('activities', a, 'title').local) {
-          missingLocal = Math.max(0, missingLocal - 1);
+        // generic meals ("Lunch", "Dinner") add nothing for an officer — keep only named restaurants/places
+        if (a.kind === 'meal' && !a.nameZh && !p) {
+          if (!inCard('activities', a, 'title').local) missingLocal = Math.max(0, missingLocal - 1);
           continue;
         }
         if (label && !stops.includes(label)) stops.push(label);
@@ -136,9 +151,8 @@ export function TravelDocPage() {
   };
   const linkedAtts = [out, ret, hotelDoc].filter(Boolean).flatMap((d) => attIds(d!)).map((id) => atts.find((a) => a.id === id)).filter(Boolean) as Attachment[];
 
-  return (
-    <div className="page">
-      <PageHeader title={t('Thẻ thông tin nhập cảnh')} sub={t('Đưa cho nhân viên xem khi cần')} back={`/j/${j.id}`} />
+  const controls = (
+    <>
       <div className="seg no-print" role="group" aria-label={t('Ngôn ngữ hiển thị của thẻ')}>
         {(['zh', 'en', 'ko', 'vi'] as L[]).map((l) => <button key={l} className={lang === l ? 'on' : ''} onClick={() => setCardLang(l)}>{({ zh: '中文', en: 'English', ko: '한국어', vi: t('Tiếng Việt') } as const)[l]}</button>)}
       </div>
@@ -148,7 +162,10 @@ export function TravelDocPage() {
         <button className={detail ? 'on' : ''} onClick={() => setDetail(true)}>{t('Chi tiết')}</button>
       </div>
 
-      <article className="travel-doc printable" lang={lang === 'zh' ? 'zh-CN' : lang} data-testid="travel-card">
+    </>
+  );
+  const card = (
+      <article ref={cardRef} className="travel-doc printable" style={{ fontSize: `${scale}rem` } as any} lang={lang === 'zh' ? 'zh-CN' : lang} data-testid="travel-card">
         <h2>{L('title')}</h2>
         <p className="big">{L('purpose')}: {L(cfg.purpose)}</p>
         <section>
@@ -172,15 +189,41 @@ export function TravelDocPage() {
           <section data-testid="travel-card-itinerary">
             <h3>{L('itinerary')}</h3>
             {itinerary.map(({ d, cities, stops }) => (
-              <p key={d.id} className="itin-day">
-                <b>{fmtCardDate(d.date)}</b> {cities.join('、')}{cities.length && stops.length ? ' — ' : ''}{stops.join(lang === 'zh' ? '、' : ', ')}
-              </p>
+              <div key={d.id} className="itin-day">
+                <p className="itin-head"><b>{fmtCardDate(d.date)}</b>{cities.length > 0 && <span className="itin-city"> · {cities.join(lang === 'zh' ? '、' : ', ')}</span>}</p>
+                {stops.length > 0 && <ul className="itin-stops">{stops.map((x) => <li key={x}>{x}</li>)}</ul>}
+              </div>
             ))}
             {missingLocal > 0 && <p className="muted xsmall no-print">{t('{0} mục chưa có tên bằng ngôn ngữ của thẻ nên đang hiện bản gốc. Thêm tên tiếng Trung cho hoạt động/địa điểm, hoặc dùng “Dịch nội dung bạn nhập”.', missingLocal)}</p>}
           </section>
         )}
         <p className="muted xsmall">{L('note')}</p>
       </article>
+  );
+  return (
+    <div className="page">
+      <PageHeader title={t('Thẻ thông tin nhập cảnh')} sub={t('Đưa cho nhân viên xem khi cần')} back={`/j/${j.id}`} />
+      {!present && controls}
+      {!present && (
+        <div className="row gap-s wrap no-print">
+          <button className="btn small primary" data-testid="card-present" onClick={() => setPresent(true)}><LuMaximize2 size={14} /> {t('Trình chiếu toàn màn hình')}</button>
+          <button className="btn small" onClick={copyCard}><LuCopy size={14} /> {t('Sao chép')}</button>
+        </div>
+      )}
+      {!present && card}
+      {present && createPortal(
+        <div className="present-overlay" data-testid="card-presentation">
+          <div className="present-bar">
+            <button className="icon-btn" aria-label={t('Đóng')} onClick={() => setPresent(false)}><LuX size={24} /></button>
+            <span className="grow" />
+            <button className="btn small" aria-label={t('Chữ nhỏ hơn')} onClick={() => setScaleP(Math.max(0.85, +(scale - 0.15).toFixed(2)))}>A−</button>
+            <button className="btn small" aria-label={t('Chữ lớn hơn')} onClick={() => setScaleP(Math.min(2, +(scale + 0.15).toFixed(2)))}>A+</button>
+          </div>
+          {controls}
+          {card}
+        </div>,
+        document.body,
+      )}
 
       {(detail || show.documents) && linkedAtts.length > 0 && (
         <section className="card no-print">

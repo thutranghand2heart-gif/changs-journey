@@ -19,6 +19,8 @@ import { hotelOf } from '../../lib/wallet';
 import { LanguageButton } from '../../ui/Language';
 import { getLang, t } from '../../lib/i18n';
 import { Tx, TxNudge } from '../../ui/contentTx';
+import { CountdownSleigh, countdownProgress } from './CountdownSleigh';
+import { cityName } from '../../lib/cityNames';
 
 const seenOpening = new Set<string>();
 const NUM_VI = ['', 'Một', 'Hai', 'Ba', 'Bốn', 'Năm', 'Sáu', 'Bảy', 'Tám', 'Chín', 'Mười'];
@@ -87,8 +89,14 @@ export function JourneyHome() {
 
         <section className="glass-card today-card" aria-label={t('Hôm nay')}>
           {today.phase === 'before' && (
-            <p className="countdown"><b className="big-num">{today.daysUntil}</b> {' '}{t('ngày nữa')}{isXmas && j.destinations[0] ? t(' là đến {0} 🎄', j.destinations[0]) : ''}</p>
+            <p className="countdown"><b className="big-num">{today.daysUntil}</b> {' '}{t('ngày nữa')}{isXmas && j.destinations[0] ? t(' là đến {0} 🎄', cityName(j.destinations[0], getLang()) ?? j.destinations[0]) : ''}</p>
           )}
+          <CountdownSleigh
+            journey={j}
+            progress={countdownProgress(j, today.phase, today.daysUntil)}
+            leftLabel={today.phase === 'before' ? t('Hôm nay') : ''}
+            rightLabel={today.phase === 'before' ? `${fmtShort(j.startDate)} · ${cityName(j.destinations[0] ?? '', getLang()) ?? j.destinations[0] ?? ''}` : t('Đã đến nơi ✨')}
+          />
           {today.phase === 'after' && <p>{t('Chuyến đi đã khép lại. Những bước chân vẫn còn đây ✨')}</p>}
           {today.phase === 'during' && today.day && (
             <div>

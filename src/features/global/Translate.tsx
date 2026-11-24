@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ContentTranslation, StoreName, TranslationSettings, UiLang } from '../../db/schema';
 import * as db from '../../db/idb';
 import { getSettings, saveSettings } from '../../db/repo';
-import { Confirm, Field, PageHeader, Sheet, queryParam, useLive, useStore, useToast } from '../../ui/core';
+import { Confirm, Field, PageHeader, Sheet, pickFiles, queryParam, useLive, useStore, useToast } from '../../ui/core';
+import { parseTxFile, planTxImport, type TxImportPlan } from '../../lib/txFile';
 import { useApp } from '../../ui/app-context';
 import { buildTxMap, CATEGORY_DEFAULTS, collectItems, hashText, LANGS, missingPairs, txId, type TxItem } from '../../lib/contentI18n';
 import { runJob } from '../../lib/translate';
@@ -91,6 +92,20 @@ export function TranslatePage() {
     else toast(t('Đã lưu {0} bản dịch — đọc được cả khi offline.', r.done));
   };
 
+  const [plan, setPlan] = useState<TxImportPlan | null>(null);
+  const pickTxFile = async () => {
+    const [f] = await pickFiles('.json,application/json');
+    if (!f) return;
+    try {
+      const file = parseTxFile(await f.text());
+      const all = await loadAllForTranslation();
+      const recs = new Map<string, any>();
+      for (const [store, list] of Object.entries(all)) for (const r of list ?? []) recs.set(`${store}|${r.id}`, r);
+      setPlan(planTxImport(file, recs, map));
+    } catch {
+      toast(t('Tệp này không phải tệp bản dịch của ứng dụng.'), 'err');
+    }
+  };
   const back = () => (history.length > 1 ? history.back() : (location.hash = '#/'));
   const shown = items.filter((i) => !filter || i.text.toLowerCase().includes(filter.toLowerCase())).slice(0, 200);
 
@@ -166,6 +181,12 @@ export function TranslatePage() {
           </>
         )}
 
+        <section className="card" data-testid="tx-file">
+          <h4>{t('Nhập tệp bản dịch')}</h4>
+          <p className="xsmall muted">{t('Dành cho tệp bản dịch riêng (.json) của hành trình bạn. Không cần mạng, không gửi gì đi. Chỉ áp dụng cho nội dung bạn chưa sửa; bản dịch bạn tự sửa được giữ nguyên.')}</p>
+          <button className="btn small" data-testid="tx-file-pick" onClick={pickTxFile}>{t('Chọn tệp bản dịch…')}</button>
+        </section>
+
         <section className="card">
           <h4>{t('Sửa bản dịch bằng tay')}</h4>
           <p className="xsmall muted">{t('Không cần mạng. Bản bạn sửa sẽ không bị dịch máy ghi đè.')}</p>
@@ -192,6 +213,24 @@ export function TranslatePage() {
         confirmText={t('Thu hồi')}
         onConfirm={async () => void (await save({ consentAt: undefined, auto: false }))}
         onClose={() => setRevoke(false)}
+      />
+      <Confirm
+        open={!!plan}
+        title={t('Nhập bản dịch?')}
+        body={plan ? <div className="small" data-testid="tx-file-plan">
+          <p>{t('Sẽ lưu {0} bản dịch.', plan.applied)}</p>
+          {plan.editedSkipped > 0 && <p>{t('{0} mục bạn đã sửa nên bỏ qua (giữ nguyên nội dung của bạn).', plan.editedSkipped)}</p>}
+          {plan.manualKept > 0 && <p>{t('{0} bản dịch bạn tự sửa được giữ nguyên.', plan.manualKept)}</p>}
+          {plan.missing > 0 && <p>{t('{0} mục không tìm thấy trong máy.', plan.missing)}</p>}
+        </div> : ''}
+        confirmText={t('Nhập')}
+        onConfirm={async () => {
+          if (!plan) return;
+          for (const r of plan.rows) await db.put('translations', r, true);
+          db.notify();
+          toast(t('Đã lưu {0} bản dịch — đọc được cả khi offline.', plan.applied));
+        }}
+        onClose={() => setPlan(null)}
       />
       {rows.length > 0 && (
         <p className="center">

@@ -10,21 +10,77 @@ const CX = 230;
 
 interface Tier { top: number; bottom: number; half: number }
 
-function tierPath(t: Tier, scallops: number, droop: number): string {
+
+// Organic evergreen tier: irregular drooping branch tips with fine needle serrations instead of smooth scallops.
+function rng(seed: number) {
+  let x = seed;
+  return () => ((x = (x * 9301 + 49297) % 233280) / 233280);
+}
+function branchTier(t: Tier, i: number): string {
+  const r = rng(101 + i * 37);
   const left = CX - t.half;
   const right = CX + t.half;
-  const shoulder = t.top + (t.bottom - t.top) * 0.18;
-  let d = `M ${CX} ${t.top} C ${CX - t.half * 0.25} ${shoulder}, ${left + t.half * 0.18} ${t.bottom - droop * 2.2}, ${left} ${t.bottom}`;
-  const seg = (right - left) / scallops;
-  for (let i = 0; i < scallops; i++) {
-    const x0 = left + seg * i;
-    const x1 = x0 + seg;
-    const mid = (x0 + x1) / 2;
-    // each scallop droops; edges slightly lifted for a 3D, curved-hem feel
-    const curve = Math.sin(((i + 0.5) / scallops) * Math.PI);
-    d += ` Q ${mid} ${t.bottom + droop * (0.65 + 0.55 * curve)}, ${x1} ${t.bottom + (i === scallops - 1 ? 0 : droop * 0.12 * curve)}`;
+  const pts: string[] = [`M ${CX + (r() - 0.5) * 4} ${t.top}`];
+  // left flank: short needle clusters stepping outwards
+  const steps = 7 + i;
+  for (let k = 1; k <= steps; k++) {
+    const f = k / steps;
+    const y = t.top + (t.bottom - t.top) * f * 0.92;
+    const x = CX - t.half * Math.pow(f, 0.85) * 0.96;
+    pts.push(`L ${x - 4 - r() * 7} ${y + 2 + r() * 4}`, `L ${x + 3 + r() * 3} ${y - 1}`);
   }
-  d += ` C ${right - t.half * 0.18} ${t.bottom - droop * 2.2}, ${CX + t.half * 0.25} ${shoulder}, ${CX} ${t.top} Z`;
+  // hem: drooping branch tips of varied width & length, each tip serrated
+  const tips = 4 + Math.round(i * 0.75);
+  const seg = (right - left) / tips;
+  for (let k = 0; k < tips; k++) {
+    const x0 = left + seg * k;
+    const w = seg * (0.85 + r() * 0.3);
+    const curve = Math.sin(((k + 0.5) / tips) * Math.PI);
+    const drop = 16 + i * 2 + curve * (10 + i) + r() * 10;
+    const tipX = x0 + w * (0.45 + (r() - 0.5) * 0.2);
+    const base = t.bottom - 4 + (1 - curve) * -6;
+    // left side of tip with needles
+    for (let n = 1; n <= 4; n++) {
+      const f = n / 4;
+      pts.push(`L ${x0 + (tipX - x0) * f - 2} ${base + drop * f + (n % 2 ? 3 : -2)}`);
+    }
+    pts.push(`L ${tipX} ${base + drop + 4}`);
+    for (let n = 1; n <= 4; n++) {
+      const f = n / 4;
+      const xe = Math.min(right, x0 + seg);
+      pts.push(`L ${tipX + (xe - tipX) * f + 2} ${base + drop * (1 - f) + (n % 2 ? 3 : -3)}`);
+    }
+  }
+  for (let k = steps; k >= 1; k--) {
+    const f = k / steps;
+    const y = t.top + (t.bottom - t.top) * f * 0.92;
+    const x = CX + t.half * Math.pow(f, 0.85) * 0.96;
+    pts.push(`L ${x - 3 - r() * 3} ${y - 1}`, `L ${x + 4 + r() * 7} ${y + 2 + r() * 4}`);
+  }
+  return pts.join(' ') + ' Z';
+}
+/** Branch spines radiating from the trunk with needle ticks — gives each tier visible structure and depth. */
+function fronds(t: Tier, i: number): string {
+  const r = rng(7 + i * 13);
+  const n = 5 + Math.round(i * 0.8);
+  let d = '';
+  for (let k = 0; k < n; k++) {
+    const f = (k + 0.5) / n - 0.5;
+    const x0 = CX + f * 10;
+    const y0 = t.top + (t.bottom - t.top) * (0.25 + r() * 0.15);
+    const x1 = CX + f * t.half * 1.75;
+    const y1 = t.bottom + 6 + Math.cos(f * Math.PI) * (8 + i);
+    const cx = (x0 + x1) / 2 + f * 18;
+    const cy = Math.min(y0, y1) + (y1 - y0) * 0.35;
+    d += `M ${x0} ${y0} Q ${cx} ${cy} ${x1} ${y1} `;
+    for (let q = 1; q <= 6; q++) {
+      const u = q / 7;
+      const px = (1 - u) * (1 - u) * x0 + 2 * (1 - u) * u * cx + u * u * x1;
+      const py = (1 - u) * (1 - u) * y0 + 2 * (1 - u) * u * cy + u * u * y1;
+      const len = 5 + u * 9;
+      d += `M ${px} ${py} l ${-len * 0.55} ${len * 0.8} M ${px} ${py} l ${len * 0.55} ${len * 0.8} `;
+    }
+  }
   return d;
 }
 
@@ -124,22 +180,15 @@ export function ChristmasTree({ lights = true, animate = true, className = '' }:
       {/* tiers: bottom first so upper tiers overlap */}
       {[...tiers].reverse().map((t, ri) => {
         const i = tiers.length - 1 - ri;
-        const sc = 4 + Math.round(i * 0.6);
-        const droop = 14 + i * 1.5;
         return (
           <g key={i} className="tier" style={{ animationDelay: `${(tiers.length - i) * 70}ms` }}>
-            <path d={tierPath({ ...t, top: t.top + 14, bottom: t.bottom + 12 }, sc, droop)} fill="#04150f" opacity="0.55" transform="translate(10 4)" />
-            <path d={tierPath(t, sc, droop)} fill="url(#tg-branch)" />
-            <path d={tierPath(t, sc, droop)} fill="url(#tg-sheen)" />
-            <path d={tierPath({ ...t, top: t.top + (t.bottom - t.top) * 0.55 }, sc, droop)} fill="url(#tg-shadow)" opacity="0.7" />
-            {/* needle texture strokes */}
-            {Array.from({ length: 6 + i }, (_, k) => {
-              const f = (k + 0.5) / (6 + i) - 0.5;
-              const x = CX + f * t.half * 1.7;
-              const y = t.bottom - 8;
-              return <path key={k} d={`M ${x} ${y} q ${f * 10} -${22 + i * 2} ${f * 28} -${44 + i * 3}`} stroke="#4fa585" strokeOpacity="0.22" strokeWidth="1.4" fill="none" />;
-            })}
-            <path d={tierPath(t, sc, droop)} fill="none" stroke="#D5B477" strokeOpacity="0.55" strokeWidth="1.2" />
+            <path d={branchTier({ ...t, top: t.top + 14, bottom: t.bottom + 10 }, i + 20)} fill="#04150f" opacity="0.55" transform="translate(9 5)" />
+            <path d={branchTier(t, i)} fill="url(#tg-branch)" />
+            <path d={branchTier(t, i)} fill="url(#tg-sheen)" />
+            <path d={branchTier({ ...t, top: t.top + (t.bottom - t.top) * 0.55 }, i + 40)} fill="url(#tg-shadow)" opacity="0.65" />
+            <path d={fronds(t, i)} stroke="#5fb894" strokeOpacity={0.16 + (i % 3) * 0.03} strokeWidth="1.3" strokeLinecap="round" fill="none" />
+            <path d={fronds({ ...t, half: t.half * 0.7 }, i + 9)} stroke="#0a2e24" strokeOpacity="0.35" strokeWidth="1.1" strokeLinecap="round" fill="none" transform="translate(0 6)" />
+            <path d={branchTier(t, i)} fill="none" stroke="#D5B477" strokeOpacity="0.28" strokeWidth="0.9" strokeLinejoin="round" />
           </g>
         );
       })}

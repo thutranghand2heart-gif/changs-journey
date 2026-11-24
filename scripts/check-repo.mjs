@@ -10,7 +10,7 @@
 // The repo stores only keyed hashes (privacy-fingerprints.json), which reveal nothing without the key.
 import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const args = process.argv.slice(2);
@@ -91,4 +91,10 @@ if (problems.length) {
   console.error('Privacy/secret check FAILED:\n' + problems.map((p) => '  ✘ ' + p).join('\n'));
   process.exit(1);
 }
-console.log(`Privacy/secret check passed (${repoFiles.length} repo files${distDir ? ` + ${distFiles.length} build files` : ''}).`);
+const verdict = key ? 'FULL (all layers, incl. private fingerprints)' : 'PARTIAL — private itinerary fingerprint layer skipped: PRIVACY_GUARD_KEY secret not set';
+console.log(`Privacy/secret check passed (${repoFiles.length} repo files${distDir ? ` + ${distFiles.length} build files` : ''}). Coverage: ${verdict}.`);
+if (process.env.GITHUB_ACTIONS) {
+  // never claim full verification when a layer was skipped: visible warning + job summary on GitHub
+  if (!key) console.log('::warning title=Privacy guard partial::Private itinerary fingerprint layer skipped (secret PRIVACY_GUARD_KEY not set). Other layers passed.');
+  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Privacy guard${distDir ? ' (build)' : ' (repository)'}\n- Result: passed\n- Coverage: ${verdict}\n`);
+}

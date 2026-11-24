@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LuPlus, LuPencil, LuLock, LuTrash2 } from 'react-icons/lu';
+import { LuPlus, LuPencil, LuLock, LuTrash2, LuPlane, LuTrainFront, LuBedDouble, LuUtensils, LuCamera, LuLandmark, LuCoffee, LuSparkles, LuArrowUp, LuArrowDown, LuArrowUpDown, LuClock } from 'react-icons/lu';
 import type { Activity, ActivityStatus, Day } from '../../db/schema';
 import { db, deleteActivity, updateJourney } from '../../db/repo';
 import { Confirm, Field, go, PageHeader, queryParam, Sheet, useToast } from '../../ui/core';
@@ -15,6 +15,7 @@ export const STATUS_LABEL: Record<ActivityStatus, string> = { draft: tr('Nháp')
 
 export function JourneyTab({ dayId }: { dayId?: string }) {
   const { journey: j, days } = useJourney();
+  const ct = useCt();
   const toast = useToast();
   const [delDay, setDelDay] = useState<Day | null>(null);
   if (dayId) {
@@ -30,7 +31,7 @@ export function JourneyTab({ dayId }: { dayId?: string }) {
   };
   return (
     <div className="page">
-      <PageHeader title={t('Journey')} sub={t('{0} · {1} ngày', j.title, days.length)} />
+      <PageHeader title={t('Journey')} sub={t('{0} · {1} ngày', ct('journeys', j, 'title'), days.length)} />
       <div className="day-cards">
         {days.map((d) => (
           <div key={d.id} className={`day-card glass-card ${d.freeDay ? 'free' : ''}`}>
@@ -72,6 +73,15 @@ function DayView({ day }: { day: Day }) {
   const [open, setOpen] = useState<string | null>(queryParam('a'));
   const [editDay, setEditDay] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [reorder, setReorder] = useState(false);
+  const move = (i: number, dir: -1 | 1) => {
+    const list = [...acts];
+    const k = i + dir;
+    if (k < 0 || k >= list.length) return;
+    [list[i], list[k]] = [list[k], list[i]];
+    saveDayOrder(day, list);
+  };
+  const sortByTime = () => saveDayOrder(day, [...acts].sort((a, b) => (a.start ?? '99:99').localeCompare(b.start ?? '99:99')));
   useEffect(() => setOpen(queryParam('a')), [day.id]);
   const act = acts.find((a) => a.id === open);
 
@@ -98,7 +108,13 @@ function DayView({ day }: { day: Day }) {
         </div>
       ) : (
         <>
-          <Timeline acts={acts} onOpen={setOpen} placeName={(id) => { const p = places.find((x) => x.id === id); return p ? ct('places', p, 'name') : undefined; }} />
+          {acts.length > 1 && (
+            <div className="row gap-s wrap">
+              <button className={`btn small ${reorder ? 'primary' : 'ghost'}`} data-testid="reorder-toggle" onClick={() => setReorder(!reorder)}><LuArrowUpDown size={14} /> {' '}{reorder ? t('Xong') : t('Sắp xếp')}</button>
+              {reorder && <button className="btn small ghost" onClick={sortByTime}><LuClock size={14} /> {' '}{t('Sắp theo giờ')}</button>}
+            </div>
+          )}
+          <Timeline acts={acts} reorder={reorder} onMove={move} onOpen={(id) => !reorder && setOpen(id)} placeName={(id) => { const p = places.find((x) => x.id === id); return p ? ct('places', p, 'name') : undefined; }} />
           {!acts.length && <p className="muted center">{t('Chưa có hoạt động.')}</p>}
           <button className="btn" onClick={() => setAdding(true)}><LuPlus /> {' '}{t('Thêm hoạt động')}</button>
         </>
@@ -110,15 +126,40 @@ function DayView({ day }: { day: Day }) {
   );
 }
 
-function Timeline({ acts, onOpen, placeName }: { acts: Activity[]; onOpen: (id: string) => void; placeName: (id?: string) => string | undefined }) {
+const KIND_ICON: Record<Activity['kind'], (p: { size?: number }) => any> = { flight: LuPlane, transport: LuTrainFront, hotel: LuBedDouble, meal: LuUtensils, photo: LuCamera, sight: LuLandmark, rest: LuCoffee, other: LuSparkles };
+export const KIND_LABEL: Record<Activity['kind'], string> = { flight: tr('Chuyến bay'), transport: tr('Di chuyển'), hotel: tr('Khách sạn'), meal: tr('Ăn uống'), photo: tr('Chụp ảnh'), sight: tr('Tham quan'), rest: tr('Nghỉ ngơi'), other: tr('Khác') };
+
+/** Renumber one day's activities in the given order (orders are only compared within a day). */
+export async function saveDayOrder(day: Day, list: Activity[]) {
+  for (const [i, a] of list.entries()) if (a.order !== day.index * 1000 + i) await db.put('activities', { ...a, order: day.index * 1000 + i }, true);
+  db.notify();
+}
+/** Put an activity with a start time between its neighbours by time; untimed items keep their place. */
+export function insertByTime(list: Activity[], a: Activity): Activity[] {
+  const rest = list.filter((x) => x.id !== a.id);
+  if (!a.start) return [...rest, a];
+  const at = rest.findIndex((x) => x.start && x.start > a.start!);
+  return at < 0 ? [...rest, a] : [...rest.slice(0, at), a, ...rest.slice(at)];
+}
+
+function Timeline({ acts, onOpen, placeName, reorder, onMove }: { acts: Activity[]; onOpen: (id: string) => void; placeName: (id?: string) => string | undefined; reorder?: boolean; onMove?: (i: number, dir: -1 | 1) => void }) {
   const { journey: j } = useJourney();
   return (
     <ol className="gold-timeline">
-      {acts.map((a) => (
-        <li key={a.id} className={`tl-item status-${a.status} ${a.optional ? 'optional' : ''}`}>
+      {acts.map((a, i) => {
+        const Icon = KIND_ICON[a.kind] ?? LuSparkles;
+        return (
+        <li key={a.id} className={`tl-item kind-${a.kind} status-${a.status} ${a.optional ? 'optional' : ''}`}>
           <span className="tl-dot" aria-hidden="true" />
+          {reorder && (
+            <span className="tl-move">
+              <button className="icon-btn" aria-label={t('Lên trên')} disabled={i === 0} onClick={() => onMove?.(i, -1)}><LuArrowUp size={18} /></button>
+              <button className="icon-btn" aria-label={t('Xuống dưới')} disabled={i === acts.length - 1} onClick={() => onMove?.(i, 1)}><LuArrowDown size={18} /></button>
+            </span>
+          )}
           <button className="tl-card glass-card" onClick={() => onOpen(a.id)}>
             <div className="tl-time">
+              <span className="tl-kind" title={t(KIND_LABEL[a.kind])} aria-label={t(KIND_LABEL[a.kind])}><Icon size={15} /></span>
               {a.start ? <b>{a.approxTime ? '~' : ''}{a.start}{a.end ? `–${a.end}` : ''}</b> : <span className="muted">{t('Linh hoạt')}</span>}
               {a.timeZone !== j.timeZone && a.timeZoneLabel && <span className="tz-badge">{t(a.timeZoneLabel)}</span>}
               {a.kind === 'flight' && a.timeZone === j.timeZone && <span className="tz-badge">{t(a.timeZoneLabel ?? tzLabel(a.timeZone))}</span>}
@@ -133,7 +174,8 @@ function Timeline({ acts, onOpen, placeName }: { acts: Activity[]; onOpen: (id: 
             </div>
           </button>
         </li>
-      ))}
+        );
+      })}
     </ol>
   );
 }
@@ -251,7 +293,16 @@ export function ActivityEditor({ day, a, onClose }: { day: Day; a?: Activity; on
         <Field label={t('Ghi chú')}><textarea rows={3} value={f.notes} onChange={(e: any) => setF({ ...f, notes: e.target.value })} /></Field>
         <div className="row gap">
           {a && <button className="btn danger ghost" onClick={() => setConfirmDel(true)}>{t('Xóa')}</button>}
-          <button className="btn primary" disabled={!f.title.trim()} onClick={async () => (await db.put('activities', f), toast(t('Đã lưu hoạt động')), onClose())}>{t('Lưu')}</button>
+          <button className="btn primary" disabled={!f.title.trim()} onClick={async () => {
+            await db.put('activities', f);
+            // when the time or the day changed, put it in time order on that day (other items keep their order)
+            if (!a || a.start !== f.start || a.dayId !== f.dayId) {
+              const target = days.find((d) => d.id === f.dayId);
+              if (target) await saveDayOrder(target, insertByTime(activities.filter((x) => x.dayId === f.dayId && x.id !== f.id), f));
+            }
+            toast(t('Đã lưu hoạt động'));
+            onClose();
+          }}>{t('Lưu')}</button>
         </div>
       </div>
       <Confirm open={confirmDel} danger title={t('Xóa hoạt động?')} body={t('Ảnh, biên lai, chi phí và kỷ niệm liên kết sẽ được giữ lại (chỉ bỏ liên kết).')} onConfirm={async () => (await deleteActivity(f), onClose())} onClose={() => setConfirmDel(false)} />

@@ -42,6 +42,7 @@ export interface JourneySettings {
   backgrounds: Record<string, BackgroundSetting | undefined>; // key: 'home' | page key
   rotateBackgrounds: ID[]; // optional per-day rotation blob ids for home
   coverBlobId?: ID;
+  countdownStickerBlobId?: ID; // personal countdown sleigh sticker (local only, original PNG kept as imported)
   exchangeRates?: { KRW?: ManualRate; VND?: ManualRate };
 }
 export interface ManualRate { perUnit: number; enteredAt: string; note?: string }
@@ -163,6 +164,7 @@ export interface WalletDoc {
   paymentStatus?: PaymentStatus;
   flight?: FlightInfo;
   hotel?: HotelInfo;
+  train?: TrainInfo;
 }
 
 export type PaymentStatus = 'unknown' | 'not-required' | 'pending' | 'partially-paid' | 'paid' | 'refunded';
@@ -187,6 +189,8 @@ export interface FlightInfo {
   baggage?: string;
 }
 
+/** Train booking details (all optional, entered by the user). */
+export interface TrainInfo { trainNumber?: string; depStation?: string; arrStation?: string; date?: string; depTime?: string; arrTime?: string; carriage?: string; seat?: string; bookingRef?: string }
 export interface HotelInfo { name?: string; nameZh?: string; addressZh?: string; addressEn?: string; phone?: string; checkIn?: string; checkOut?: string; bookingRef?: string }
 
 export type AttachmentKind = 'eticket' | 'confirmation' | 'boarding-pass' | 'qr' | 'photo' | 'screenshot' | 'receipt' | 'other';
@@ -274,6 +278,12 @@ export interface Pose {
   refBlobIds: ID[];
   activityIds: ID[];
   builtin: boolean;
+  // optional written guidance (V1.1)
+  hands?: string;
+  body?: string;
+  camera?: string;
+  framing?: string;
+  lighting?: string;
 }
 
 export interface ChecklistItem { id: ID; journeyId: ID; group: string; text: string; done: boolean; order: number }
@@ -321,7 +331,7 @@ export interface ContentTranslation {
   srcHash: string; // hash of the original text this translation was made from (detects edits → stale)
   srcLang: UiLang;
   source: 'machine' | 'manual';
-  provider?: 'mymemory';
+  provider?: 'mymemory' | 'file';
   at: string;
 }
 

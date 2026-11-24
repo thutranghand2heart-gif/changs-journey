@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { LuHeart, LuPlus, LuImage } from 'react-icons/lu';
+import { createPortal } from 'react-dom';
+import { LuHeart, LuPlus, LuImage, LuFan, LuUser, LuHeartHandshake, LuFootprints, LuMoonStar, LuBuilding2, LuSnowflake, LuCamera, LuHand, LuPersonStanding, LuFrame, LuSun, LuPencil, LuX, LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 import type { Activity, Pose } from '../../db/schema';
 import { db, saveFileAsBlob } from '../../db/repo';
 import { BlobImg, Confirm, Field, go, PageHeader, pickFiles, queryParam, Sheet, useStore, useToast } from '../../ui/core';
@@ -8,6 +9,11 @@ import { uid } from '../../lib/util';
 import { t, tr } from '../../lib/i18n';
 import { Tx } from '../../ui/contentTx';
 
+const CAT_ICON: Record<Pose['category'], any> = { hanfu: LuFan, portrait: LuUser, couple: LuHeartHandshake, street: LuFootprints, night: LuMoonStar, architecture: LuBuilding2, seasonal: LuSnowflake };
+function CatIcon({ c, size = 18 }: { c: Pose['category']; size?: number }) {
+  const I = CAT_ICON[c] ?? LuCamera;
+  return <I size={size} />;
+}
 export const POSE_CATS: Record<Pose['category'], string> = { hanfu: tr('Hán phục'), portrait: tr('Chân dung'), couple: tr('Đôi (tự chọn)'), street: tr('Đường phố'), night: tr('Ban đêm'), architecture: tr('Kiến trúc'), seasonal: tr('Theo mùa') };
 
 export function PoseTab() {
@@ -28,11 +34,21 @@ export function PoseTab() {
       </div>
       <div className="pose-grid">
         {list.map((p) => (
-          <button key={p.id} className="pose-card glass-card" onClick={() => setOpen(p.id)}>
-            {p.refBlobIds[0] ? <BlobImg id={p.refBlobIds[0]} className="pose-img" /> : <div className="pose-art" aria-hidden="true">{p.category === 'hanfu' ? '🏮' : p.category === 'night' ? '🌃' : p.category === 'architecture' ? '🏛️' : p.category === 'seasonal' ? '❄️' : p.category === 'street' ? '🚶' : p.category === 'couple' ? '🤍' : '📷'}</div>}
-            <span className="pose-cat">{t(POSE_CATS[p.category])}</span>
-            <b><Tx s="poses" r={p} f="title" /></b>
-            {p.favorite && <span className="fav"><LuHeart size={14} /></span>}
+          <button key={p.id} className={`pose-card cat-${p.category}`} onClick={() => setOpen(p.id)}>
+            {p.refBlobIds[0] ? (
+              <BlobImg id={p.refBlobIds[0]} className="pose-img" />
+            ) : (
+              <div className="pose-ph">
+                <CatIcon c={p.category} size={30} />
+                <span className="pose-ph-text"><Tx s="poses" r={p} f="description" /></span>
+                <span className="pose-ph-add"><LuImage size={12} /> {t('Chưa có ảnh tham khảo')}</span>
+              </div>
+            )}
+            <span className="pose-meta">
+              <span className="pose-cat">{t(POSE_CATS[p.category])}{p.refBlobIds.length > 1 ? ` · ${p.refBlobIds.length}` : ''}</span>
+              <b><Tx s="poses" r={p} f="title" /></b>
+            </span>
+            {p.favorite && <span className="fav" aria-label={t('♥ Yêu thích')}><LuHeart size={16} /></span>}
           </button>
         ))}
       </div>
@@ -50,7 +66,70 @@ export function PoseTab() {
   );
 }
 
-function PoseSheet({ p, acts, onClose, isNew }: { p: Pose; acts: Activity[]; onClose: () => void; isNew?: boolean }) {
+const GUIDE: [keyof Pose, string, any][] = [
+  ['hands', tr('Tay'), LuHand], ['body', tr('Dáng người'), LuPersonStanding], ['camera', tr('Góc máy'), LuCamera], ['framing', tr('Khung hình'), LuFrame], ['lighting', tr('Ánh sáng'), LuSun],
+];
+
+function PoseView({ p, acts, onEdit, onClose }: { p: Pose; acts: Activity[]; onEdit: () => void; onClose: () => void }) {
+  const [full, setFull] = useState<number | null>(null);
+  const linked = p.activityIds.map((id) => acts.find((a) => a.id === id)).filter(Boolean) as Activity[];
+  return (
+    <Sheet open onClose={onClose} title={<Tx s="poses" r={p} f="title" />} full>
+      <div className="stack pose-view" data-testid="pose-view">
+        <div className="row gap-s wrap">
+          <span className="status-pill"><CatIcon c={p.category} size={13} /> {' '}{t(POSE_CATS[p.category])}</span>
+          <button className={`btn small ${p.favorite ? 'primary' : 'ghost'}`} data-testid="pose-fav" onClick={() => db.put('poses', { ...p, favorite: !p.favorite })}><LuHeart size={14} /> {' '}{p.favorite ? t('Đã yêu thích') : t('♥ Yêu thích')}</button>
+        </div>
+        {p.refBlobIds.length > 0 ? (
+          <div className="pose-photos">{p.refBlobIds.map((id, i) => <BlobImg key={id} id={id} className="pose-photo" onClick={() => setFull(i)} />)}</div>
+        ) : (
+          <div className="pose-ph big"><CatIcon c={p.category} size={36} /><span className="pose-ph-add">{t('Chưa có ảnh tham khảo — bấm “Sửa” để thêm ảnh của bạn.')}</span></div>
+        )}
+        {p.description && <div className="card user-text"><h4>{t('Mô tả')}</h4><p><Tx s="poses" r={p} f="description" /></p></div>}
+        {GUIDE.some(([k]) => p[k]) && (
+          <div className="card pose-guide">
+            {GUIDE.filter(([k]) => p[k]).map(([k, l, I]) => (
+              <div key={k} className="pose-guide-row"><span className="tl-kind"><I size={15} /></span><span><b>{t(l)}</b><br /><Tx s="poses" r={p} f={k} /></span></div>
+            ))}
+          </div>
+        )}
+        {p.notes && <div className="card user-text"><h4>📝 {t('Ghi chú cá nhân')}</h4><p><Tx s="poses" r={p} f="notes" /></p></div>}
+        {linked.length > 0 && (
+          <div className="card">
+            <h4>{t('Liên kết với hoạt động')}</h4>
+            {linked.map((a) => <button key={a.id} className="list-row" onClick={() => go(`/j/${p.journeyId}/journey/${a.dayId}?a=${a.id}`)}>→ <Tx s="activities" r={a} f="title" /></button>)}
+          </div>
+        )}
+        <button className="btn" data-testid="pose-edit" onClick={onEdit}><LuPencil size={14} /> {' '}{t('Sửa')}</button>
+      </div>
+      {full != null && <PhotoViewer ids={p.refBlobIds} start={full} onClose={() => setFull(null)} />}
+    </Sheet>
+  );
+}
+
+function PhotoViewer({ ids, start, onClose }: { ids: string[]; start: number; onClose: () => void }) {
+  const [i, setI] = useState(start);
+  return createPortal(
+    <div className="viewer" role="dialog" aria-modal="true" data-testid="pose-fullscreen">
+      <div className="viewer-bar">
+        <button className="icon-btn" aria-label={t('Đóng')} onClick={onClose}><LuX size={22} /></button>
+        <span className="grow center small">{i + 1}/{ids.length}</span>
+        <button className="icon-btn" aria-label={t('Ảnh trước')} disabled={i === 0} onClick={() => setI(i - 1)}><LuChevronLeft size={22} /></button>
+        <button className="icon-btn" aria-label={t('Ảnh sau')} disabled={i === ids.length - 1} onClick={() => setI(i + 1)}><LuChevronRight size={22} /></button>
+      </div>
+      <div className="viewer-body"><BlobImg id={ids[i]} className="viewer-fit" /></div>
+    </div>,
+    document.body,
+  );
+}
+
+function PoseSheet(props: { p: Pose; acts: Activity[]; onClose: () => void; isNew?: boolean }) {
+  const [editing, setEditing] = useState(!!props.isNew);
+  if (!editing) return <PoseView p={props.p} acts={props.acts} onEdit={() => setEditing(true)} onClose={props.onClose} />;
+  return <PoseEditor {...props} />;
+}
+
+function PoseEditor({ p, acts, onClose, isNew }: { p: Pose; acts: Activity[]; onClose: () => void; isNew?: boolean }) {
   const toast = useToast();
   const [f, setF] = useState(p);
   const [del, setDel] = useState(false);
@@ -64,19 +143,29 @@ function PoseSheet({ p, acts, onClose, isNew }: { p: Pose; acts: Activity[]; onC
     }
   };
   return (
-    <Sheet open onClose={onClose} title={isNew ? t('Dáng mới') : p.title} full>
+    <Sheet open onClose={onClose} title={isNew ? t('Dáng mới') : t('Sửa dáng')} full>
       <div className="stack">
         <Field label={t('Tên')}><input value={f.title} onChange={(e: any) => setF({ ...f, title: e.target.value })} /></Field>
         <Field label={t('Nhóm')}>
           <select value={f.category} onChange={(e: any) => setF({ ...f, category: e.target.value })}>{Object.entries(POSE_CATS).map(([k, l]) => <option key={k} value={k}>{t(l)}</option>)}</select>
         </Field>
         <Field label={t('Mô tả')}><textarea rows={3} value={f.description} onChange={(e: any) => setF({ ...f, description: e.target.value })} /></Field>
+        {GUIDE.map(([k, l]) => (
+          <Field key={k} label={t(l)}><textarea rows={2} value={(f[k] as string) ?? ''} onChange={(e: any) => setF({ ...f, [k]: e.target.value || undefined })} /></Field>
+        ))}
         <Field label={t('Ghi chú cá nhân')}><textarea rows={2} value={f.notes} onChange={(e: any) => setF({ ...f, notes: e.target.value })} /></Field>
         <label className="toggle-row"><input type="checkbox" checked={f.favorite} onChange={(e: any) => setF({ ...f, favorite: e.target.checked })} /> {' '}{t('♥ Yêu thích')}</label>
         <div className="card">
           <h4>{t('Ảnh tham khảo của bạn')}</h4>
           <p className="muted xsmall">{t('Chỉ lưu trên thiết bị; không tự chia sẻ.')}</p>
-          <div className="thumb-row">{f.refBlobIds.map((id) => <BlobImg key={id} id={id} className="thumb" />)}</div>
+          <div className="thumb-row">
+            {f.refBlobIds.map((id) => (
+              <span key={id} className="thumb-wrap">
+                <BlobImg id={id} className="thumb" />
+                <button className="thumb-x" aria-label={t('Bỏ ảnh này')} onClick={() => setF({ ...f, refBlobIds: f.refBlobIds.filter((x) => x !== id) })}>×</button>
+              </span>
+            ))}
+          </div>
           <button
             className="btn small"
             onClick={async () => {
@@ -93,7 +182,7 @@ function PoseSheet({ p, acts, onClose, isNew }: { p: Pose; acts: Activity[]; onC
             {acts.filter((a) => a.kind === 'sight' || a.kind === 'photo').map((a) => (
               <label key={a.id} className="toggle-row small">
                 <input type="checkbox" checked={f.activityIds.includes(a.id)} onChange={(e: any) => setF({ ...f, activityIds: e.target.checked ? [...f.activityIds, a.id] : f.activityIds.filter((x) => x !== a.id) })} />
-                {a.title}
+                <Tx s="activities" r={a} f="title" />
               </label>
             ))}
           </div>

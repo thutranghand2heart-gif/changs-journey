@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import type { FoodEntry, Memory, ThemeId, WalletDoc } from '../../db/schema';
-import { updateJourneySettings } from '../../db/repo';
-import { Field, go, PageHeader, useStore } from '../../ui/core';
+import { db, saveFileAsBlob, updateJourneySettings } from '../../db/repo';
+import { Confirm, Field, go, PageHeader, pickFiles, useBlobUrl, useStore, useToast } from '../../ui/core';
 import { useJourney } from '../journey/JourneyShell';
 import { search } from '../../lib/search';
 import { THEMES } from '../../lib/themes';
 import { LanguageList } from '../../ui/Language';
 import { t } from '../../lib/i18n';
+import { useCt } from '../../ui/contentTx';
 
 export function FeatureLibrary() {
   const { journey: j } = useJourney();
@@ -68,12 +69,13 @@ export function SearchPage() {
 
 export function AppearancePage() {
   const { journey: j } = useJourney();
+  const ct = useCt();
   const s = j.settings;
   const set = (patch: Partial<typeof s>) => updateJourneySettings(j.id, patch);
   const [custom, setCustom] = useState(s.customColors ?? { bg: '#1d2b3a', accent: '#e0c38c', card: 'rgba(29,43,58,0.6)', text: '#fdf8f0' });
   return (
     <div className="page">
-      <PageHeader title={t('Giao diện')} sub={t('Chỉ áp dụng cho “{0}”', j.title)} back={`/j/${j.id}`} />
+      <PageHeader title={t('Giao diện')} sub={t('Chỉ áp dụng cho “{0}”', ct('journeys', j, 'title'))} back={`/j/${j.id}`} />
       <div className="stack">
         <section className="card">
           <h4>🌐 {t('Ngôn ngữ giao diện')}</h4>
@@ -95,6 +97,7 @@ export function AppearancePage() {
             ))}
           </div>
         )}
+        <StickerSettings />
         <Field label={t('Kiểu chữ')}>
           <select value={s.fontStyle} onChange={(e: any) => set({ fontStyle: e.target.value })}><option value="storybook">{t('Storybook (có chân)')}</option><option value="modern">{t('Hiện đại')}</option><option value="handwritten">{t('Viết tay')}</option></select>
         </Field>
@@ -108,5 +111,34 @@ export function AppearancePage() {
         <button className="btn ghost" onClick={() => go(`/j/${j.id}/edit`)}>{t('✏️ Sửa thông tin chuyến đi')}</button>
       </div>
     </div>
+  );
+}
+
+/** Personal countdown sleigh sticker: imported from the device, stored as the original file in IndexedDB only. */
+function StickerSettings() {
+  const { journey: j } = useJourney();
+  const toast = useToast();
+  const id = j.settings.countdownStickerBlobId;
+  const { url } = useBlobUrl(id);
+  const [del, setDel] = useState(false);
+  const pick = async () => {
+    const [f] = await pickFiles('image/png,image/webp,image/*');
+    if (!f) return;
+    const rec = await saveFileAsBlob(f, f.name, j.id); // original bytes, unchanged
+    await updateJourneySettings(j.id, { countdownStickerBlobId: rec.id });
+    if (id) await db.del('blobs', id);
+    toast(t('Đã lưu nhãn dán trên máy này'));
+  };
+  return (
+    <section className="card" data-testid="sticker-settings">
+      <h4>{t('🛷 Nhãn dán đếm ngược')}</h4>
+      <p className="muted xsmall">{t('Ảnh PNG nền trong suốt dùng làm nút kéo của thanh đếm ngược. Ảnh giữ nguyên như bạn nhập, chỉ lưu trên máy (có trong bản sao lưu), không tải lên đâu cả.')}</p>
+      {url && <div className="sticker-preview"><img src={url} alt="" /></div>}
+      <div className="row gap-s wrap">
+        <button className="btn small" data-testid="sticker-import" onClick={pick}>{id ? t('Thay ảnh') : t('Nhập ảnh')}</button>
+        {id && <button className="btn small ghost" onClick={() => setDel(true)}>{t('Gỡ ảnh')}</button>}
+      </div>
+      <Confirm open={del} title={t('Gỡ nhãn dán?')} body={t('Thanh đếm ngược sẽ dùng hình mặc định. Ảnh sẽ bị xóa khỏi máy này (bản sao lưu cũ vẫn còn).')} onConfirm={async () => { await updateJourneySettings(j.id, { countdownStickerBlobId: undefined }); if (id) await db.del('blobs', id); }} onClose={() => setDel(false)} />
+    </section>
   );
 }
