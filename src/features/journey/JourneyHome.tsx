@@ -51,7 +51,7 @@ export function JourneyHome() {
     return () => clearTimeout(tm);
   }, [opening]);
 
-  const today = smartToday(j, days, activities, docs);
+  const today = smartToday(j, days, activities, docs, new Date(), ct);
   const hotel = hotelOf(j, docs);
   const base = `/j/${j.id}`;
   const tk = tokensFor(j);
@@ -167,7 +167,7 @@ export function JourneyHome() {
         <div className="day-strip">
           {days.map((d) => (
             <button key={d.id} className={`day-chip glass-card ${today.day?.id === d.id ? 'is-today' : ''} ${d.freeDay ? 'free' : ''}`} onClick={() => go(`${base}/journey/${d.id}`)}>
-              <span className="day-n">{t('Ngày')}{' '}{d.index}</span>
+              <span className="day-n">{t('Ngày {0}', d.index)}</span>
               <span className="day-date">{fmtShort(d.date)}</span>
               <span className="day-t"><Tx s="days" r={d} f="title" /></span>
             </button>

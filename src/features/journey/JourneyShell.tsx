@@ -7,6 +7,8 @@ import { ArtIcon } from '../../ui/art';
 import { themeStyle, tokensFor } from '../../lib/themes';
 import { t } from '../../lib/i18n';
 import { BgLayer } from './Background';
+import { Snow } from '../../art/Snow';
+import { useApp } from '../../ui/app-context';
 import { todayIn } from '../../lib/time';
 
 export interface JourneyData { journey: Journey; days: Day[]; activities: Activity[]; places: Place[] }
@@ -30,8 +32,11 @@ export const TABS = [
   { key: 'wallet', label: 'wallet', icon: LuWallet },
 ];
 
+const SKY_TABS = ['journey', 'magic', 'map'];
+
 export function JourneyShell({ id, tab, children }: { id: string; tab: string; children: (d: JourneyData) => ReactNode }) {
   const [data, loaded, err] = useLive(() => load(id), [id], null as JourneyData | null);
+  const { reduced, settings: gs } = useApp();
   if (!loaded) return <div className="page center muted">{t('Đang mở nhật ký…')}</div>;
   if (err) return <div className="page"><p className="error">{t('Lỗi bộ nhớ:')}{' '}{err}</p></div>;
   if (!data)
@@ -54,6 +59,8 @@ export function JourneyShell({ id, tab, children }: { id: string; tab: string; c
     <Ctx.Provider value={data}>
       <div className={`journey-root theme-${s.theme} font-${s.fontStyle}`} style={themeStyle(tk, s.fontStyle)}>
         {bg && primary && <BgLayer bg={bg} />}
+        {/* V1.3: the celestial sky also on the other emerald pages (Home draws its own above the tree layer) */}
+        {SKY_TABS.includes(tab) && s.theme === 'christmas-emerald' && s.decorations && !reduced && !gs.performanceMode && <div className="sky-layer"><Snow density={0.8} /></div>}
         <div className="journey-content">{children(data)}</div>
         <TabBar id={id} tab={tab} xmas={data.journey.settings.theme === 'christmas-emerald'} />
       </div>

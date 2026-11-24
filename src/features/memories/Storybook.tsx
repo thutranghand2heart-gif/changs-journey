@@ -25,6 +25,7 @@ export function StorybookPage() {
   const seenKey = `chang-storybook-opened-${j.id}`;
   const [opened, setOpened] = useState(() => { try { return sessionStorage.getItem(seenKey) === '1'; } catch { return true; } });
   const [turning, setTurning] = useState(false);
+  const [justOpened, setJustOpened] = useState(false);
   const [edit, setEdit] = useState<string | null>(null);
   const [del, setDel] = useState<StoryPage | null>(null);
   const [view, setView] = useState<string | null>(null);
@@ -36,7 +37,7 @@ export function StorybookPage() {
     try { sessionStorage.setItem(seenKey, '1'); } catch { /* */ }
     if (reducedMotion) return setOpened(true);
     setTurning(true);
-    setTimeout(() => setOpened(true), 900);
+    setTimeout(() => { setOpened(true); setJustOpened(true); }, 950);
   };
   const add = async (copyOf?: StoryPage) => {
     const p: StoryPage = { id: uid('sp'), journeyId: j.id, index: (pages.at(-1)?.index ?? 0) + 1, bgAssetId: 'page', createdAt: nowIso(), updatedAt: nowIso(),
@@ -71,7 +72,7 @@ export function StorybookPage() {
 
   const cur = pages.find((p) => p.id === edit);
   return (
-    <div className="page area-paper">
+    <div className={`page area-paper ${justOpened ? 'book-opened' : ''}`}>
       <PageHeader title={t('Storybook')} sub={t('{0} trang', pages.length)} back={`/j/${j.id}/memories`} />
       {!page && <p className="xsmall muted">{t('Giấy trang nhật ký Christmas Collection xuất hiện sau khi bạn nhập gói artwork (Cài đặt → Artwork).')}</p>}
       <div className="story-pages" data-testid="story-pages">
@@ -91,13 +92,18 @@ export function StorybookPage() {
           </figure>
         ))}
       </div>
-      <button className="btn primary" data-testid="story-add" onClick={() => add()}><LuPlus size={14} /> {t('Thêm trang')}</button>
-      <p className="xsmall muted">{t('Nếu chữ dài hơn khung, hãy thêm trang mới thay vì thu nhỏ chữ. Chữ nên nằm trong vùng giữa, tránh họa tiết ở các góc.')}</p>
+      {pages.length > 0 && <button className="btn primary" data-testid="story-add" onClick={() => add()}><LuPlus size={14} /> {t('Thêm trang')}</button>}
       {!pages.length && (
-        <div className="story-empty card">
-          <p>{t('Chưa có trang nào. Bấm “Thêm trang” để bắt đầu viết trên giấy nhật ký — thêm ảnh, khung ảnh và sticker tùy thích.')}</p>
-        </div>
+        <button className="story-empty-page" data-testid="story-empty" onClick={() => add()} style={{ aspectRatio: `1 / ${aspect}` }}>
+          {page ? <ArtImg id="page" v="disp" className="story-empty-bg" /> : <span className="le-bg-plain story-empty-bg" />}
+          <span className="story-empty-text" style={{ left: `${safe[0] * 100}%`, top: `${safe[1] * 100}%`, right: `${(1 - safe[2]) * 100}%`, bottom: `${(1 - safe[3]) * 100}%` }}>
+            <span className="story-empty-title">{t('Trang đầu tiên đang chờ bạn')}</span>
+            <span className="story-empty-body">{t('Hãy bắt đầu câu chuyện đầu tiên của chuyến đi — viết vài dòng, thêm ảnh, khung ảnh và sticker.')}</span>
+            <span className="btn primary story-empty-cta" data-testid="story-add"><LuPlus size={14} /> {t('Bắt đầu viết')}</span>
+          </span>
+        </button>
       )}
+      <p className="xsmall muted">{t('Nếu chữ dài hơn khung, hãy thêm trang mới thay vì thu nhỏ chữ. Chữ nên nằm trong vùng giữa, tránh họa tiết ở các góc.')}</p>
       {view && (() => {
         const vp = pages.find((p) => p.id === view);
         if (!vp) return null;

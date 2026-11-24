@@ -9,7 +9,7 @@ import { LanguageList } from '../../ui/Language';
 import { t } from '../../lib/i18n';
 import { useCt } from '../../ui/contentTx';
 import { ArtIcon, useArtUrl } from '../../ui/art';
-import { LuBookHeart, LuImages, LuBookOpen, LuFrame, LuGift, LuPenLine, LuMail, LuHourglass, LuSparkles, LuDownload, LuUtensils, LuReceipt, LuPlane, LuTrainFront, LuCloudSun, LuListChecks, LuLanguages, LuPhone, LuGlobe, LuSearch, LuSnowflake, LuPalette, LuImage, LuLock, LuArchive, LuWifiOff } from 'react-icons/lu';
+import { LuBookHeart, LuImages, LuBookOpen, LuFrame, LuGift, LuPenLine, LuMail, LuHourglass, LuSparkles, LuDownload, LuUtensils, LuReceipt, LuPlane, LuTrainFront, LuCloudSun, LuListChecks, LuLanguages, LuPhone, LuGlobe, LuSearch, LuSnowflake, LuPalette, LuImage, LuLock, LuArchive, LuWifiOff, LuCalendarDays, LuMapPin, LuHeart, LuFileText } from 'react-icons/lu';
 
 type Feat = [label: string, path: string, art: string | null, Icon: any];
 export function FeatureLibrary() {
@@ -28,7 +28,7 @@ export function FeatureLibrary() {
       [t('Checklist'), `${b}/checklist`, null, LuListChecks], [t('Trợ lý ngôn ngữ'), `${b}/language`, null, LuLanguages], [t('Khẩn cấp'), `${b}/emergency`, null, LuPhone],
       [t('Dịch nội dung bạn nhập'), `/translate?j=${j.id}`, null, LuGlobe], [t('Tìm kiếm'), `${b}/search`, null, LuSearch],
     ]],
-    [t('Phép màu Giáng sinh'), [[t('Advent · Quả cầu tuyết · Xe tuần lộc'), `${b}/magic`, 'globe', LuSnowflake], [t('Giao diện & ảnh nền'), `${b}/appearance`, null, LuPalette], [t('Artwork'), '/artwork', null, LuImage]]],
+    [t('Phép màu Giáng sinh'), [[t('Advent · Quả cầu tuyết · Chuyến bay của Chang'), `${b}/magic`, 'advent', LuSnowflake], [t('Giao diện & ảnh nền'), `${b}/appearance`, null, LuPalette], [t('Artwork'), '/artwork', null, LuImage]]],
     [t('Riêng tư & bảo vệ'), [[t('Két riêng tư'), '/vault', 'vault', LuLock], [t('Sao lưu & khôi phục'), '/backup', 'backup', LuArchive], [t('Sẵn sàng offline'), `/offline?j=${j.id}`, null, LuWifiOff]]],
   ];
   return (
@@ -40,7 +40,7 @@ export function FeatureLibrary() {
           <div className="feat-grid">
             {items.map(([l, p, art, Icon]) => (
               <button key={p} className="feat" onClick={() => go(p)}>
-                <span className="feat-ic">{xmas && art ? <ArtIcon id={art} size={44} fallback={<Icon size={22} />} /> : <Icon size={22} />}</span>
+                {xmas && art ? <span className="feat-ic art"><ArtIcon id={art} size={48} fallback={<Icon size={22} />} /></span> : <span className="feat-ic line" aria-hidden="true"><Icon size={22} strokeWidth={1.6} /></span>}
                 <span className="feat-l">{l}</span>
               </button>
             ))}
@@ -67,7 +67,7 @@ export function SearchPage() {
     else if (h.kind === 'memory') go(`${b}/memories/${h.id}`);
     else go(`${b}/wallet?d=${h.id}`);
   };
-  const KIND: Record<string, string> = { activity: '🗓️', day: '📖', place: '📍', food: '🍜', memory: '💭', document: '📄' };
+  const KIND: Record<string, any> = { activity: <LuCalendarDays size={16} />, day: <LuBookOpen size={16} />, place: <LuMapPin size={16} />, food: <LuUtensils size={16} />, memory: <LuHeart size={16} />, document: <LuFileText size={16} /> };
   return (
     <div className="page">
       <PageHeader title={t('Tìm kiếm')} sub={t('Tiếng Việt, chữ Hán, pinyin (có hoặc không dấu)')} back={`/j/${j.id}`} />
@@ -76,7 +76,7 @@ export function SearchPage() {
       <div className="stack-s">
         {hits.map((h) => (
           <button key={h.kind + h.id} className="list-row glass-card" onClick={() => open(h)}>
-            <span>{KIND[h.kind]}</span>
+            <span className="search-kind" aria-hidden="true">{KIND[h.kind]}</span>
             <span className="grow text-left"><b>{h.title}</b><span className="muted xsmall block">{h.snippet}</span></span>
           </button>
         ))}

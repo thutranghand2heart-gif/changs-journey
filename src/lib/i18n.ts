@@ -5,7 +5,7 @@ type Dict = Record<string, string>;
 
 const vi: Dict = {
   // English-named features get a Vietnamese label so the vi interface never mixes languages (V1.2.1)
-  'Food Passport': 'Hộ chiếu ẩm thực', Checklist: 'Danh sách chuẩn bị', Storybook: 'Sách nhật ký', 'Memory Book': 'Sổ kỷ niệm', Gallery: 'Thư viện ảnh',
+  'Food Passport': 'Hộ chiếu ẩm thực', Checklist: 'Danh sách chuẩn bị', Storybook: 'Sách nhật ký', 'Memory Book': 'Sổ kỷ niệm', Gallery: 'Thư viện ảnh', 'My Travel World': 'Thế giới du lịch của tôi', Keepsakes: 'Kỷ vật',
   appName: 'Những bước chân của Chang', subtitle: 'Every step has a story.', addJourney: 'Thêm chuyến đi', myJourneys: 'Hành trình của tôi',
   home: 'Trang chủ', journey: 'Hành trình', map: 'Bản đồ', pose: 'Tạo dáng', wallet: 'Ví', library: 'Thư viện tính năng', search: 'Tìm kiếm',
   back: 'Quay lại', save: 'Lưu', cancel: 'Hủy', delete: 'Xóa', edit: 'Sửa', close: 'Đóng', copy: 'Sao chép', copied: 'Đã sao chép',

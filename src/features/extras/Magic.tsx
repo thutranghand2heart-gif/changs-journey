@@ -1,11 +1,13 @@
+import { cityName } from '../../lib/cityNames';
 import { useState } from 'react';
-import { PageHeader, go } from '../../ui/core';
+import { MagicalFlight } from './MagicalFlight';
+import { PageHeader, go, useToast, useBlobUrl } from '../../ui/core';
 import { useJourney } from '../journey/JourneyShell';
 import { useApp } from '../../ui/app-context';
-import { Snow } from '../../art/Snow';
+import { Snow, SkyControls } from '../../art/Snow';
 import { todayIn } from '../../lib/time';
 import { updateJourneySettings } from '../../db/repo';
-import { t, tr } from '../../lib/i18n';
+import { t, tr, getLang } from '../../lib/i18n';
 import { Tx } from '../../ui/contentTx';
 import { SnowGlobeArt } from '../../art/SnowGlobeArt';
 import { useArtUrl } from '../../ui/art';
@@ -24,13 +26,19 @@ export function MagicPage() {
   const { reduced } = useApp();
   const [door, setDoor] = useState<number | null>(null);
   const [opened, setOpened] = useState<number[]>(() => { try { return JSON.parse(localStorage.getItem(`advent-${j.id}`) ?? '[]'); } catch { return []; } });
-  const [sleigh, setSleigh] = useState(0);
+  const [flight, setFlight] = useState<null | 'once' | 'loop'>(null);
+  const [opening, setOpening] = useState<number | null>(null);
+  const toast = useToast();
+  const stickerId = j.settings.countdownStickerBlobId;
+  const { url: stickerUrl } = useBlobUrl(stickerId);
   const globeUrl = useArtUrl('globe', 'thumb');
   const [shake, setShake] = useState(0);
   const today = todayIn(j.timeZone);
   const year = j.startDate.slice(0, 4);
   const canOpen = (n: number) => today >= `${year}-12-${String(n).padStart(2, '0')}`;
   const open = (n: number) => {
+    if (!canOpen(n)) { toast(t('Cánh cửa này mở vào ngày {0}/12 — hãy chờ thêm một chút nhé.', n)); return; }
+    if (!opened.includes(n) && !reduced) { setOpening(n); setTimeout(() => setOpening(null), 1100); }
     setDoor(n);
     const next = Array.from(new Set([...opened, n]));
     setOpened(next);
@@ -42,16 +50,44 @@ export function MagicPage() {
       <section className="glass-card">
         <h3 className="display">{t('Lịch Advent')}</h3>
         <p className="muted xsmall">{t('Mỗi ô mở vào đúng ngày của tháng 12 (giờ')}{' '}{j.timeZone}).</p>
-        <div className="advent">
-          {Array.from({ length: 25 }, (_, i) => i + 1).map((n) => (
-            <button key={n} className={`advent-door ${opened.includes(n) ? 'open' : ''}`} disabled={!canOpen(n)} onClick={() => open(n)} aria-label={t('Ngày {0}{1}', n, canOpen(n) ? '' : t(' (chưa đến ngày)'))}>{n}</button>
-          ))}
+        <div className="advent" data-testid="advent">
+          {Array.from({ length: 25 }, (_, i) => i + 1).map((n) => {
+            const st = opened.includes(n) ? 'opened' : canOpen(n) ? 'ready' : 'future';
+            return (
+              <button
+                key={n}
+                className={`advent-door ${st} ${n % 2 ? 'tone-a' : 'tone-b'} ${opening === n ? 'opening' : ''} ${door === n ? 'current' : ''}`}
+                data-state={st}
+                aria-disabled={st === 'future'}
+                onClick={() => open(n)}
+                aria-label={st === 'future' ? t('Ngày {0} — mở vào {0}/12', n) : st === 'ready' ? t('Ngày {0} — có thể mở', n) : t('Ngày {0} — đã mở', n)}
+              >
+                <span className="door-inside" aria-hidden="true"><span className="door-star">✦</span><span className="door-in-num">{n}</span></span>
+                <span className="door-panel" aria-hidden="true">
+                  <span className="door-num">{n}</span>
+                  <span className="door-knob" />
+                  {st === 'future' && <span className="door-date">{n}/12</span>}
+                  {st === 'ready' && <span className="door-ribbon" />}
+                </span>
+                {opening === n && (
+                  <span className="door-burst" aria-hidden="true">
+                    {Array.from({ length: 10 }, (_, k) => <i key={k} style={{ ['--a' as any]: `${k * 36}deg`, ['--d' as any]: `${18 + (k % 3) * 8}px` }} />)}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
-        {door && <p className="advent-msg display">🎁 {door}/12 — {j.adventMessages?.[door - 1] ? <Tx s="journeys" r={j} f={`adventMessages.${door - 1}`} /> : t(DEFAULT_ADVENT[door - 1])}</p>}
+        <div className="advent-legend xsmall">
+          <span><i className="lg future" />{t('Chưa đến ngày')}</span>
+          <span><i className="lg ready" />{t('Có thể mở')}</span>
+          <span><i className="lg opened" />{t('Đã mở')}</span>
+        </div>
+        {door && <p className="advent-msg display" data-testid="advent-msg"><span className="advent-msg-date">{door}/12</span> {j.adventMessages?.[door - 1] ? <Tx s="journeys" r={j} f={`adventMessages.${door - 1}`} /> : t(DEFAULT_ADVENT[door - 1])}</p>}
       </section>
 
       <section className="glass-card">
-        <h3 className="display">{t('Quả cầu tuyết')}{' '}{j.destinations[0] ?? ''}</h3>
+        <h3 className="display">{t('Quả cầu tuyết')}{' '}{j.destinations[0] ? cityName(j.destinations[0], getLang()) ?? j.destinations[0] : ''}</h3>
         {globeUrl ? <SnowGlobeArt reduced={reduced} /> : <>
         <button className="snowglobe" onClick={() => setShake((s) => s + 1)} aria-label={t('Lắc quả cầu tuyết')}>
           <svg viewBox="0 0 200 220" aria-hidden="true">
@@ -82,32 +118,35 @@ export function MagicPage() {
         </>}
       </section>
 
-      <section className="glass-card">
-        <h3 className="display">{t('Xe tuần lộc')}</h3>
-        <button className="btn" onClick={() => setSleigh((s) => s + 1)} disabled={reduced}>{t('Gọi ông già Noel bay qua 🦌')}</button>
+      <section className="glass-card flight-card">
+        <h3 className="display">{t('Chuyến bay kỳ diệu của Chang')}</h3>
+        {stickerUrl ? (
+          <>
+            <img className="flight-preview" src={stickerUrl} alt="" draggable={false} />
+            <p className="muted xsmall">{t('Xe tuần lộc của Chang bay lượn khắp màn hình: qua lại, lượn vòng, bay hình số 8 và kéo theo bụi sao vàng.')}</p>
+            <div className="row gap-s wrap">
+              <button className="btn primary" data-testid="flight-once" onClick={() => setFlight('once')} disabled={reduced || !!flight}>{t('Bay một vòng')}</button>
+              <button className="btn" data-testid="flight-loop" onClick={() => setFlight('loop')} disabled={reduced || flight === 'loop'}>{t('Bay liên tục')}</button>
+              {flight && <button className="btn ghost" onClick={() => setFlight(null)}>{t('Dừng bay')}</button>}
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="muted small">{t('Chưa có sticker xe tuần lộc của bạn. Thêm sticker trong Giao diện để Chang bay lượn trên màn hình.')}</p>
+            <button className="btn" onClick={() => go(`/j/${j.id}/appearance`)}>{t('Thêm sticker xe tuần lộc')}</button>
+          </>
+        )}
         {reduced && <p className="muted xsmall">{t('Đã tắt vì đang giảm chuyển động.')}</p>}
       </section>
 
       <section className="glass-card">
         <h3 className="display">{t('Trang trí')}</h3>
-        <label className="toggle-row"><input type="checkbox" checked={j.settings.decorations} onChange={(e: any) => updateJourneySettings(j.id, { decorations: e.target.checked })} /> {' '}{t('Tuyết, đèn và hạt vàng trên Home')}</label>
+        <SkyControls t={t} />
+        <label className="toggle-row"><input type="checkbox" checked={j.settings.decorations} onChange={(e: any) => updateJourneySettings(j.id, { decorations: e.target.checked })} /> {' '}{t('Tuyết, sao băng và bụi sao vàng trên các trang Giáng sinh')}</label>
         <button className="link-btn" onClick={() => go(`/j/${j.id}/appearance`)}>{t('Thêm tùy chọn giao diện →')}</button>
       </section>
 
-      {sleigh > 0 && !reduced && (
-        <div key={sleigh} className="sleigh" aria-hidden="true">
-          <svg viewBox="0 0 220 70" width="220" height="70">
-            <g fill="#D5B477">
-              <path d="M10 40 q10 -14 22 -4 l6 -10 l4 12 q12 4 6 14 l-30 2 z" />
-              <path d="M52 40 q10 -14 22 -4 l6 -10 l4 12 q12 4 6 14 l-30 2 z" />
-            </g>
-            <path d="M44 44 L100 44" stroke="#D5B477" strokeWidth="1" />
-            <path d="M100 30 h60 q16 0 20 -14 l6 0 q-2 26 -24 30 h-64 z" fill="#8B1E2D" stroke="#D5B477" />
-            <path d="M96 52 h86 q10 0 12 -8" stroke="#D5B477" strokeWidth="2" fill="none" />
-            <circle cx="140" cy="22" r="8" fill="#FFF8EE" />
-          </svg>
-        </div>
-      )}
+      {flight && !reduced && <MagicalFlight blobId={stickerId} mode={flight} onEnd={() => setFlight(null)} />}
       {shake > 0 && !reduced && <div className="magic-snow"><Snow key={shake} density={0.6} burst={40} /></div>}
     </div>
   );

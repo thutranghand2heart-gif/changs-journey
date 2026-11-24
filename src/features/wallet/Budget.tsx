@@ -149,7 +149,7 @@ export function ExpenseEditor({ e, isNew, days, acts, onClose }: { e: Expense; i
           <Field label={t('Ngày')}>
             <select value={f.dayId ?? ''} onChange={(ev: any) => setF({ ...f, dayId: ev.target.value || undefined })}>
               <option value="">—</option>
-              {days.map((d) => <option key={d.id} value={d.id}>{t('Ngày')}{' '}{d.index}</option>)}
+              {days.map((d) => <option key={d.id} value={d.id}>{t('Ngày {0}', d.index)}</option>)}
             </select>
           </Field>
           <Field label={t('Hoạt động')}>

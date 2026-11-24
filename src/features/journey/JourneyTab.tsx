@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LuPlus, LuPencil, LuLock, LuTrash2, LuPlane, LuTrainFront, LuBedDouble, LuUtensils, LuCamera, LuLandmark, LuCoffee, LuSparkles, LuArrowUp, LuArrowDown, LuArrowUpDown, LuClock } from 'react-icons/lu';
+import { LuPlus, LuPencil, LuLock, LuTrash2, LuPlane, LuTrainFront, LuBedDouble, LuUtensils, LuCamera, LuLandmark, LuCoffee, LuSparkles, LuArrowUp, LuArrowDown, LuArrowUpDown, LuClock, LuMapPin } from 'react-icons/lu';
 import type { Activity, ActivityStatus, Day } from '../../db/schema';
 import { db, deleteActivity, updateJourney } from '../../db/repo';
 import { Confirm, Field, go, PageHeader, queryParam, Sheet, useToast } from '../../ui/core';
@@ -88,7 +88,7 @@ function DayView({ day }: { day: Day }) {
   return (
     <div className="page area-journey">
       <PageHeader
-        title={<span className="display">{t('Ngày')}{' '}{day.index}: <Tx s="days" r={day} f="title" /></span>}
+        title={<span className="display">{t('Ngày {0}', day.index)}: <Tx s="days" r={day} f="title" /></span>}
         sub={`${fmtDateVi(day.date)}${day.subtitle ? ' · ' + ct('days', day, 'subtitle').replace(/^[^·]*·\s*/, '') : ''}`}
         back={`/j/${j.id}/journey`}
         right={<button className="icon-btn" aria-label={t('Sửa ngày')} onClick={() => setEditDay(true)}><LuPencil size={18} /></button>}
@@ -145,11 +145,17 @@ export function insertByTime(list: Activity[], a: Activity): Activity[] {
 function Timeline({ acts, onOpen, placeName, reorder, onMove }: { acts: Activity[]; onOpen: (id: string) => void; placeName: (id?: string) => string | undefined; reorder?: boolean; onMove?: (i: number, dir: -1 | 1) => void }) {
   const { journey: j } = useJourney();
   return (
-    <ol className="gold-timeline">
+    <ol className="gold-timeline v13">
       {acts.map((a, i) => {
         const Icon = KIND_ICON[a.kind] ?? LuSparkles;
+        // V1.3 hierarchy: part-of-day heading (morning / afternoon / evening) when it changes — display only
+        const per = periodOf(a.start);
+        const prevPer = i > 0 ? periodOf(acts[i - 1].start) : null;
+        const key = isKeyActivity(a);
+        const place = a.nameZh || placeName(a.placeId);
         return (
-        <li key={a.id} className={`tl-item kind-${a.kind} status-${a.status} ${a.optional ? 'optional' : ''}`}>
+        <li key={a.id} className={`tl-item kind-${a.kind} status-${a.status} ${a.optional ? 'optional' : ''} ${key ? 'key' : ''}`} data-key={key ? '1' : undefined}>
+          {per && per !== prevPer && !reorder && <div className="tl-period" aria-hidden="true">{t(PERIOD_LABEL[per])}</div>}
           <span className="tl-dot" aria-hidden="true" />
           {reorder && (
             <span className="tl-move">
@@ -160,13 +166,13 @@ function Timeline({ acts, onOpen, placeName, reorder, onMove }: { acts: Activity
           <button className="tl-card glass-card" onClick={() => onOpen(a.id)}>
             <div className="tl-time">
               <span className="tl-kind" title={t(KIND_LABEL[a.kind])} aria-label={t(KIND_LABEL[a.kind])}><Icon size={15} /></span>
-              {a.start ? <b>{a.approxTime ? '~' : ''}{a.start}{a.end ? `–${a.end}` : ''}</b> : <span className="muted">{t('Linh hoạt')}</span>}
+              {a.start ? <b className="tl-clock">{a.approxTime ? '~' : ''}{a.start}{a.end ? `–${a.end}` : ''}</b> : <span className="tl-clock muted">{t('Linh hoạt')}</span>}
+              <span className="tl-kind-label">{t(KIND_LABEL[a.kind])}</span>
               {a.timeZone !== j.timeZone && a.timeZoneLabel && <span className="tz-badge">{t(a.timeZoneLabel)}</span>}
               {a.kind === 'flight' && a.timeZone === j.timeZone && <span className="tz-badge">{t(a.timeZoneLabel ?? tzLabel(a.timeZone))}</span>}
             </div>
             <div className="tl-title"><Tx s="activities" r={a} f="title" /></div>
-            {a.nameZh && <div className="zh small" lang="zh-CN">{a.nameZh}</div>}
-            {!a.nameZh && placeName(a.placeId) && <div className="muted small">{placeName(a.placeId)}</div>}
+            {place && <div className={`tl-place ${a.nameZh ? 'zh' : ''}`} lang={a.nameZh ? 'zh-CN' : undefined}><LuMapPin size={13} aria-hidden="true" /> {place}</div>}
             <div className="tl-tags">
               <span className={`status-pill s-${a.status}`}>{t(STATUS_LABEL[a.status])}</span>
               {a.optional && <span className="status-pill">{t('Tùy chọn')}</span>}
@@ -178,6 +184,18 @@ function Timeline({ acts, onOpen, placeName, reorder, onMove }: { acts: Activity
       })}
     </ol>
   );
+}
+
+type Period = 'morning' | 'afternoon' | 'evening';
+const PERIOD_LABEL: Record<Period, string> = { morning: tr('Buổi sáng'), afternoon: tr('Buổi chiều'), evening: tr('Buổi tối') };
+function periodOf(start?: string): Period | null {
+  if (!start) return null;
+  const h = Number(start.slice(0, 2));
+  return h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
+}
+/** Key moments get a visual accent only (data is never changed): flights, hotel, booked photo shoots and timed transfers. */
+export function isKeyActivity(a: Activity): boolean {
+  return a.kind === 'flight' || a.kind === 'hotel' || (a.kind === 'photo' && !!a.start) || (a.kind === 'transport' && !!a.start);
 }
 
 function DayEditor({ day, onClose }: { day: Day; onClose: () => void }) {

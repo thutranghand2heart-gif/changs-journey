@@ -379,7 +379,7 @@ export function ExportPage() {
             if (!list.length) return null;
             return (
               <section key={d.id} className="print-day">
-                <h2>{t('Ngày')}{' '}{d.index}: <Tx s="days" r={d} f="title" /></h2>
+                <h2>{t('Ngày {0}', d.index)}: <Tx s="days" r={d} f="title" /></h2>
                 {list.map((m) => {
                   const txt = m.encrypted ? priv[m.id] : { title: m.title, body: m.body };
                   if (!txt) return null;

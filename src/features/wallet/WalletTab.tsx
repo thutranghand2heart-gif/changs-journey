@@ -9,7 +9,7 @@ import { bytes, copyText, nowIso } from '../../lib/util';
 import { pauseAmbienceFor } from '../../art/audio';
 import { makeDocPrivate, readPrivateDoc, vaultUnlocked } from '../../lib/vault';
 import { addAttachmentFromFile, attIds, deleteAttachmentEverywhere, deleteRecord, isBooking, linkAttachments, linkStandaloneInto, newRecord, orphanAttachments, referencesOf, unlinkAttachment } from '../../lib/wallet';
-import { t, tr } from '../../lib/i18n';
+import { t, tr, getLang } from '../../lib/i18n';
 import { FlightEditor, flightLine } from './FlightEditor';
 import { Tx } from '../../ui/contentTx';
 
@@ -50,8 +50,8 @@ export function WalletTab() {
         <button className="doc-main" onClick={() => setOpen(d.id)}>
           <span className="doc-ic">{d.privacy === 'private' ? <LuLock /> : DOC_ICON[d.category]}</span>
           <span className="grow">
-            <b>{d.privacy === 'private' ? t('Giấy tờ riêng tư') : d.title}</b>
-            {d.category === 'flight' && d.flight && <span className="xsmall block">{flightLine(d.flight)}</span>}
+            <b>{d.privacy === 'private' ? t('Giấy tờ riêng tư') : <Tx s="docs" r={d} f="title" />}</b>
+            {d.category === 'flight' && d.flight && <span className="xsmall block">{flightLine(d.flight, getLang())}</span>}
             {d.category === 'train' && d.train && <span className="xsmall block">{[d.train.trainNumber, d.train.date, [d.train.depStation, d.train.depTime].filter(Boolean).join(' '), '→', [d.train.arrStation, d.train.arrTime].filter(Boolean).join(' ')].filter(Boolean).join(' · ').replace(' · → · ', ' → ')}</span>}
             <span className="muted xsmall block">
               {t(BOOKING_LABEL[d.bookingStatus])}

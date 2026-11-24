@@ -1,11 +1,12 @@
+import { cityName } from '../../lib/cityNames';
 import { useState } from 'react';
-import { LuPlus, LuStar } from 'react-icons/lu';
+import { LuPlus, LuStar, LuUtensils } from 'react-icons/lu';
 import type { Expense, FoodEntry } from '../../db/schema';
 import { db, saveFileAsBlob } from '../../db/repo';
 import { BlobImg, Confirm, Field, go, PageHeader, pickFiles, Sheet, useStore, useToast } from '../../ui/core';
 import { useJourney } from '../journey/JourneyShell';
 import { fmtMoney, nowIso, uid } from '../../lib/util';
-import { t } from '../../lib/i18n';
+import { t, getLang } from '../../lib/i18n';
 import { Tx } from '../../ui/contentTx';
 
 export function FoodPassport() {
@@ -20,11 +21,11 @@ export function FoodPassport() {
         const list = food.filter((f) => f.city === c);
         return (
           <section key={c} className="passport-page glass-card">
-            <h3 className="display">{c}</h3>
+            <h3 className="display">{cityName(c, getLang()) ?? c}</h3>
             <div className="stamps">
               {list.map((f) => (
                 <button key={f.id} className={`stamp ${f.stamped ? 'stamped' : ''}`} onClick={() => setEdit(f)}>
-                  {f.photoBlobIds[0] ? <BlobImg id={f.photoBlobIds[0]} className="stamp-img" /> : <span className="stamp-emoji">🍜</span>}
+                  {f.photoBlobIds[0] ? <BlobImg id={f.photoBlobIds[0]} className="stamp-img" /> : <span className="stamp-emoji"><LuUtensils size={26} aria-hidden="true" /></span>}
                   <span className="stamp-name"><Tx s="food" r={f} f="dish" /></span>
                   {f.rating ? <span className="xsmall">{'★'.repeat(f.rating)}</span> : null}
                 </button>

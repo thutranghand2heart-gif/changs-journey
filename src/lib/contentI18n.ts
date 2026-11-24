@@ -27,6 +27,10 @@ export function detectLang(s: string): UiLang {
   if (/[가-힯ᄀ-ᇿ]/.test(s)) return 'ko';
   const han = (s.match(/[一-鿿]/g) ?? []).length;
   const latin = (s.match(/[A-Za-zÀ-ỹ]/g) ?? []).length;
+  // V1.3: mixed text (“Tàu 上海站 → 苏州站”) belongs to the language of its other words — the Chinese names are kept
+  // verbatim when translating, so a zh reader still gets the surrounding words in Chinese. A Chinese sentence that
+  // merely contains a code (“MU5052”) stays Chinese.
+  if (han && latin >= 3 && latin * 2 >= han) return detectLang(s.replace(/[㐀-鿿　-〿＀-￯]+/g, ' '));
   if (han && han >= latin) return 'zh';
   if (/[ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹàáèéìíòóùúýãẽĩõũỹ]/i.test(s)) return 'vi';
   return latin ? 'en' : 'vi';

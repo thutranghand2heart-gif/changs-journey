@@ -1,7 +1,8 @@
 export interface Phrase { zh: string; py: string; vi: string; en: string; ko?: string; group: string }
 
-/** Meaning shown under a phrase, in the interface language (Vietnamese for vi/zh). */
-export const meaningOf = (p: Phrase, lang: string) => (lang === 'en' ? p.en : lang === 'ko' ? p.ko ?? p.en : p.vi);
+/** Meaning shown under a phrase, in the interface language. In the Chinese interface the phrase itself is the
+ * meaning, so no second language is mixed in. */
+export const meaningOf = (p: Phrase, lang: string) => (lang === 'zh' ? '' : lang === 'en' ? p.en : lang === 'ko' ? p.ko ?? p.en : p.vi);
 
 export const PHRASES: Phrase[] = [
   { group: 'Chào hỏi', zh: '你好', py: 'Nǐ hǎo', vi: 'Xin chào', en: 'Hello', ko: '안녕하세요' },

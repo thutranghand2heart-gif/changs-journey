@@ -49,7 +49,7 @@ export function LanguagePage() {
   const tts = speechSupported();
   return (
     <div className="page">
-      <PageHeader title={t('Trợ lý ngôn ngữ')} sub={t('Chữ Hán · Pinyin · Tiếng Việt')} back={`/j/${j.id}`} />
+      <PageHeader title={t('Trợ lý ngôn ngữ')} sub={t('Chữ Hán · Pinyin · Nghĩa')} back={`/j/${j.id}`} />
       {!tts && <p className="muted small">{t('Thiết bị/trình duyệt này không hỗ trợ đọc thành tiếng.')}</p>}
       {tts && <p className="muted xsmall">{t('Đọc thành tiếng dùng giọng có sẵn của iPhone; có hoạt động offline hay không tùy giọng đã tải trên máy (chưa được kiểm chứng).')}</p>}
       <div className="seg scroll-x">
@@ -58,14 +58,14 @@ export function LanguagePage() {
       </div>
       <div className="stack-s">
         {phrases.filter((p) => group === 'all' || p.group === group).map((p) => (
-          <div key={p.zh} className="phrase glass-card">
-            <p className="zh big-zh" lang="zh-CN">{p.zh}</p>
-            <p className="pinyin">{p.py}</p>
-            <p>{meaningOf(p, getLang())}</p>
-            <div className="row gap-s">
-              <button className="btn small ghost" onClick={async () => toast((await copyText(p.zh)) ? t('Đã sao chép') : t('Không sao chép được'))} aria-label={t('Sao chép')}><LuCopy size={14} /></button>
-              <button className="btn small ghost" onClick={() => setBig({ zh: p.zh, py: p.py, vi: meaningOf(p, getLang()) })} aria-label={t('Hiện chữ lớn')}><LuMaximize2 size={14} /></button>
-              {tts && <button className="btn small ghost" aria-label={t('Nghe')} onClick={async () => !(await speak(p.zh)) && toast(t('Không phát được giọng tiếng Trung trên thiết bị này'), 'warn')}><LuVolume2 size={14} /></button>}
+          <div key={p.zh} className="phrase phrase-v13 glass-card" data-testid="phrase">
+            <p className="phrase-zh" lang="zh-CN">{p.zh}</p>
+            <p className="phrase-py" lang="zh-Latn-pinyin">{p.py}</p>
+            {meaningOf(p, getLang()) && <p className="phrase-meaning">{meaningOf(p, getLang())}</p>}
+            <div className="phrase-actions">
+              {tts && <button className="btn small" aria-label={t('Phát âm')} onClick={async () => !(await speak(p.zh)) && toast(t('Không phát được giọng tiếng Trung trên thiết bị này'), 'warn')}><LuVolume2 size={16} /> {t('Phát âm')}</button>}
+              <button className="btn small ghost" onClick={async () => toast((await copyText(p.zh)) ? t('Đã sao chép') : t('Không sao chép được'))} aria-label={t('Sao chép')}><LuCopy size={16} /> {t('Sao chép')}</button>
+              <button className="btn small ghost" onClick={() => setBig({ zh: p.zh, py: p.py, vi: meaningOf(p, getLang()) })} aria-label={t('Trình chiếu')}><LuMaximize2 size={16} /> {t('Trình chiếu')}</button>
             </div>
           </div>
         ))}
@@ -259,10 +259,10 @@ export function EmergencyPage() {
       <h3 className="section-title">{t('Câu nói khẩn cấp')}</h3>
       <div className="stack-s">
         {PHRASES.filter((p) => p.group === 'Khẩn cấp').map((p) => (
-          <button key={p.zh} className="phrase glass-card text-left" onClick={() => setBig({ zh: p.zh, py: p.py, vi: meaningOf(p, getLang()) })}>
-            <span className="zh big-zh" lang="zh-CN">{p.zh}</span>
-            <span className="pinyin block">{p.py}</span>
-            <span className="block">{meaningOf(p, getLang())}</span>
+          <button key={p.zh} className="phrase phrase-v13 glass-card text-left" onClick={() => setBig({ zh: p.zh, py: p.py, vi: meaningOf(p, getLang()) })}>
+            <span className="phrase-zh block" lang="zh-CN">{p.zh}</span>
+            <span className="phrase-py block">{p.py}</span>
+            {meaningOf(p, getLang()) && <span className="phrase-meaning block">{meaningOf(p, getLang())}</span>}
           </button>
         ))}
       </div>

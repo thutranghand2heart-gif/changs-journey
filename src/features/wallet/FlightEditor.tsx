@@ -1,3 +1,5 @@
+import { airlineName, airportName } from '../../lib/cityNames';
+import type { Lang as UiLang } from '../../lib/i18n';
 import { useState } from 'react';
 import type { FlightInfo, WalletDoc } from '../../db/schema';
 import { Field } from '../../ui/core';
@@ -14,10 +16,14 @@ const FIELD_LABEL: Record<keyof FlightInfo, string> = {
 };
 
 /** One-line summary used in Wallet cards and the travel card. User data only. */
-export function flightLine(f: FlightInfo): string {
-  const dep = [f.depAirport, f.depTerminal].filter(Boolean).join(' ');
-  const arr = [f.arrAirport, f.arrTerminal].filter(Boolean).join(' ');
-  return [f.airline, f.flightNumber].filter(Boolean).join(' ') + (dep || arr ? ` · ${dep}${f.depTime ? ' ' + f.depTime : ''} → ${arr}${f.arrTime ? ' ' + f.arrTime : ''}` : '');
+/** One-line flight summary; with `lang`, airline and airports are shown with their localized names (the typed
+ * values stay unchanged in the record and on the original documents). */
+export function flightLine(f: FlightInfo, lang?: UiLang): string {
+  const ap = (x?: string) => (lang && x ? airportName(x, lang) ?? x : x);
+  const dep = [ap(f.depAirport), f.depTerminal].filter(Boolean).join(' ');
+  const arr = [ap(f.arrAirport), f.arrTerminal].filter(Boolean).join(' ');
+  const airline = lang ? airlineName(f.flightNumber, lang) ?? f.airline : f.airline;
+  return [airline, f.flightNumber].filter(Boolean).join(' ') + (dep || arr ? ` · ${dep}${f.depTime ? ' ' + f.depTime : ''} → ${arr}${f.arrTime ? ' ' + f.arrTime : ''}` : '');
 }
 
 export function FlightEditor({ d, onChange }: { d: WalletDoc; onChange: (d: WalletDoc) => void }) {

@@ -746,3 +746,101 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 .tabbar-art .art-icon.on { filter: drop-shadow(0 0 2px rgba(255, 236, 190, 0.35)); }
 .tabbar-art button.on { background: rgba(213, 180, 119, 0.14); box-shadow: inset 0 0 0 0.5px rgba(243, 226, 184, 0.45); color: #FFF8EE; }
 .tabbar { border-width: 0.5px; }
+.sky-layer .snow-canvas { z-index: 0; }
+
+/* ───────── V1.3 — Advent: 25 Christmas doors ───────── */
+.advent { gap: 8px; perspective: 700px; }
+.advent-door { position: relative; aspect-ratio: 0.82; border: 0; padding: 0; border-radius: 10px 10px 6px 6px; background: none; cursor: pointer; transform-style: preserve-3d; font-family: var(--display); }
+.advent-door:disabled { opacity: 1; }
+.door-inside { position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(circle at 50% 40%, #FFF8EE, #F3E6C8 70%, #E6D3A6); box-shadow: inset 0 0 0 1.5px #C9A76A, inset 0 4px 10px rgba(120, 80, 20, 0.25); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #6B1422; }
+.door-star { color: #C9A24E; font-size: 0.95rem; line-height: 1; text-shadow: 0 0 6px rgba(240, 210, 138, 0.8); }
+.door-in-num { font-size: 1.15rem; font-weight: 700; }
+.door-panel { position: absolute; inset: 0; border-radius: inherit; transform-origin: 0% 50%; transition: transform 900ms cubic-bezier(.3,.7,.2,1), box-shadow 300ms; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; }
+.door-panel::before { content: ''; position: absolute; inset: 4px; border-radius: 7px 7px 3px 3px; border: 1px solid rgba(233, 207, 150, 0.55); pointer-events: none; }
+.door-num { font-size: 1.35rem; font-weight: 700; color: #F6E7C1; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); }
+.door-knob { position: absolute; right: 6px; top: 66%; width: 5px; height: 5px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #FFF3D0, #C9A24E); }
+.door-date { position: absolute; bottom: 5px; left: 0; right: 0; text-align: center; font-family: var(--body, inherit); font-size: 0.62rem; letter-spacing: 0.04em; color: rgba(246, 231, 193, 0.82); }
+/* future: emerald door, gold frame — clearly closed, still beautiful and readable */
+.advent-door.future .door-panel { background: linear-gradient(165deg, #1F5A44, #0F3A2B 70%); box-shadow: inset 0 0 0 1.5px #B8955A, 0 3px 8px rgba(0, 0, 0, 0.35); }
+.advent-door.future.tone-b .door-panel { background: linear-gradient(165deg, #245F49, #123F30 70%); }
+/* ready: burgundy door, champagne-gold glow + ribbon */
+.advent-door.ready .door-panel { background: linear-gradient(165deg, #9E2236, #6B1422 75%); box-shadow: inset 0 0 0 1.5px #E9CF96, 0 0 0 2px rgba(240, 210, 138, 0.35), 0 0 16px rgba(240, 210, 138, 0.45); animation: door-glow 2.4s ease-in-out infinite; }
+.door-ribbon { position: absolute; top: 0; bottom: 0; left: 50%; width: 5px; transform: translateX(-50%); background: linear-gradient(#F3DFA8, #C9A24E); opacity: 0.85; }
+.door-ribbon::after { content: ''; position: absolute; top: 6px; left: 50%; width: 16px; height: 9px; transform: translateX(-50%); border-radius: 50%; border: 2px solid #E9CF96; }
+.advent-door.ready .door-num { position: relative; z-index: 1; background: rgba(107, 20, 34, 0.75); border-radius: 8px; padding: 0 5px; }
+@keyframes door-glow { 50% { box-shadow: inset 0 0 0 1.5px #F3DFA8, 0 0 0 2px rgba(240, 210, 138, 0.55), 0 0 22px rgba(240, 210, 138, 0.7); } }
+/* opened: door swung open to reveal the ivory inside */
+.advent-door.opened .door-panel { background: linear-gradient(165deg, #9E2236, #6B1422 75%); box-shadow: inset 0 0 0 1.5px #E9CF96; transform: rotateY(-108deg); }
+.advent-door.opened.tone-b .door-panel { background: linear-gradient(165deg, #1F5A44, #0F3A2B 70%); }
+.advent-door.opening .door-panel { transform: rotateY(-108deg); }
+.advent-door.current .door-inside { box-shadow: inset 0 0 0 2px #C9A24E, 0 0 14px rgba(240, 210, 138, 0.65); }
+.door-burst { position: absolute; inset: 0; pointer-events: none; }
+.door-burst::before { content: ''; position: absolute; inset: -30%; border-radius: 50%; background: radial-gradient(circle, rgba(255, 244, 210, 0.9), rgba(240, 210, 138, 0.35) 40%, transparent 70%); animation: door-light 1s ease-out forwards; }
+.door-burst i { position: absolute; left: 50%; top: 45%; width: 5px; height: 5px; border-radius: 50%; background: radial-gradient(circle, #fff6d8, #f0d28a 50%, transparent 72%); animation: door-dust 1s ease-out forwards; }
+@keyframes door-light { from { opacity: 0; transform: scale(0.4); } 30% { opacity: 1; } to { opacity: 0; transform: scale(1.2); } }
+@keyframes door-dust { from { transform: translate(-50%, -50%) rotate(var(--a)) translateX(0); opacity: 1; } to { transform: translate(-50%, -50%) rotate(var(--a)) translateX(var(--d)); opacity: 0; } }
+.advent-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; color: var(--muted, #cfd8d2); }
+.advent-legend .lg { display: inline-block; width: 11px; height: 13px; border-radius: 3px; margin-right: 5px; vertical-align: -2px; }
+.lg.future { background: #1F5A44; box-shadow: inset 0 0 0 1px #B8955A; }
+.lg.ready { background: #9E2236; box-shadow: inset 0 0 0 1px #E9CF96, 0 0 6px rgba(240, 210, 138, 0.6); }
+.lg.opened { background: #F3E6C8; box-shadow: inset 0 0 0 1px #C9A76A; }
+.advent-msg { background: linear-gradient(180deg, #FFF8EE, #F6EBD3); color: #3A2A1A; border-radius: 12px; padding: 12px 14px; box-shadow: inset 0 0 0 1px #D9C08A; animation: advent-msg-in 500ms ease-out; }
+.advent-msg-date { display: inline-block; font-size: 0.8rem; color: #8B1E2D; border: 1px solid #C9A24E; border-radius: 999px; padding: 0 8px; margin-right: 6px; vertical-align: 2px; }
+@keyframes advent-msg-in { from { opacity: 0; transform: translateY(6px); } }
+.reduce-motion .advent-door .door-panel, .reduce-motion .advent-door.ready .door-panel { transition: none; animation: none; }
+
+/* ───────── V1.3 — Chang's Magical Flight ───────── */
+.flight-layer { position: fixed; inset: 0; z-index: 2600; pointer-events: none; overflow: hidden; }
+.flight-dust { position: absolute; inset: 0; width: 100%; height: 100%; }
+.flight-sleigh { position: absolute; left: 0; top: 0; will-change: transform; }
+.flight-sleigh img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.flight-stop { position: absolute; left: 50%; bottom: calc(max(env(safe-area-inset-bottom), 8px) + 92px); transform: translateX(-50%); z-index: 2605; background: rgba(15, 58, 43, 0.92); color: #FFF8EE; border: 1px solid #E9CF96; border-radius: 999px; padding: 10px 22px; font-size: 1rem; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4); }
+.flight-card .flight-preview { width: min(240px, 70%); display: block; margin: 4px auto 8px; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35)); }
+.sky-controls { display: grid; gap: 6px; margin-bottom: 8px; }
+.sky-controls input[type=range] { width: 100%; }
+
+/* ───────── V1.3 — Storybook: open the book onto cream paper ───────── */
+.book-opened > * { animation: book-settle 650ms cubic-bezier(.2,.8,.2,1) both; }
+.book-opened > *:nth-child(2) { animation-delay: 60ms; }
+.book-opened > *:nth-child(3) { animation-delay: 120ms; }
+@keyframes book-settle { from { opacity: 0; transform: translateY(10px) scale(0.985); } }
+.reduce-motion .book-opened > * { animation: none; }
+.book-cover.turning .book-inner { box-shadow: 0 0 40px rgba(255, 236, 190, 0.35); transition: box-shadow 900ms; }
+.story-empty-page { position: relative; width: min(100%, 460px); margin: 4px auto; padding: 0; border: 0; background: #FFF8EE; border-radius: 6px 12px 12px 6px; overflow: hidden; box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(139, 106, 47, 0.35); cursor: pointer; display: block; }
+.story-empty-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.story-empty-text { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; color: #3A2A1A; padding: 6px; }
+.story-empty-title { font-family: var(--display); font-size: 1.45rem; line-height: 1.25; color: #103B31; }
+.story-empty-body { font-size: 1rem; line-height: 1.5; color: #5a4630; max-width: 26ch; }
+.story-empty-cta { margin-top: 4px; }
+
+/* ───────── V1.3 — Journey timeline hierarchy ───────── */
+.gold-timeline.v13 .tl-period { margin: 14px 0 8px -26px; padding-left: 26px; font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.gold-timeline.v13 .tl-item:first-child .tl-period { margin-top: 2px; }
+.gold-timeline.v13 .tl-period + .tl-dot { top: 50px; }
+.gold-timeline.v13 .tl-card { padding: 12px 14px; gap: 6px; text-align: left; }
+.gold-timeline.v13 .tl-clock { font-size: 1.02rem; color: #F3DFA8; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
+.gold-timeline.v13 .tl-kind-label { font-size: 0.74rem; color: rgba(255, 248, 238, 0.66); text-transform: uppercase; letter-spacing: 0.08em; }
+.gold-timeline.v13 .tl-title { font-size: 1.16rem; line-height: 1.3; color: #FFF8EE; font-weight: 600; }
+.gold-timeline.v13 .tl-place { display: flex; align-items: baseline; gap: 5px; font-size: 0.95rem; color: rgba(255, 248, 238, 0.82); }
+.gold-timeline.v13 .tl-place svg { flex: none; color: var(--accent); transform: translateY(1px); }
+.gold-timeline.v13 .tl-place.zh { font-size: 1rem; }
+.gold-timeline.v13 .tl-item.key .tl-card { border-left: 3px solid #E9CF96; background: linear-gradient(100deg, rgba(213, 180, 119, 0.16), rgba(16, 59, 49, 0.55) 55%); }
+.gold-timeline.v13 .tl-item.key .tl-dot { width: 16px; height: 16px; left: -24px; background: radial-gradient(circle at 40% 35%, #FFF3D0, #D5B477); box-shadow: 0 0 0 3px rgba(213, 180, 119, 0.25), 0 0 12px rgba(240, 210, 138, 0.7); }
+.gold-timeline.v13 .tl-item.key.kind-flight .tl-card { border-left-color: #C24A5C; }
+.gold-timeline.v13 .tl-item.optional .tl-card { opacity: 0.92; }
+
+/* ───────── V1.3 — Language assistant hierarchy ───────── */
+.phrase-v13 { gap: 4px; padding: 14px 16px; }
+.phrase-v13 .phrase-zh { font-size: 1.75rem; line-height: 1.35; color: #FFF8EE; font-weight: 600; margin: 0; font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", system-ui, sans-serif; }
+.phrase-v13 .phrase-py { font-size: 1.05rem; color: #E9CF96; margin: 0; letter-spacing: 0.01em; font-style: normal; }
+.phrase-v13 .phrase-meaning { font-size: 1rem; color: rgba(255, 248, 238, 0.86); margin: 2px 0 0; }
+.phrase-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.phrase-actions .btn { min-height: 40px; display: inline-flex; align-items: center; gap: 6px; }
+
+/* ───────── V1.3 — Feature Library: official icons + matching line icons ───────── */
+.feat-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; }
+.feat { padding: 12px 6px; gap: 8px; min-height: 108px; }
+.feat-ic { width: 52px; height: 52px; }
+.feat-ic.line { border-radius: 50%; background: radial-gradient(circle at 40% 35%, rgba(233, 207, 150, 0.18), rgba(16, 59, 49, 0.4)); box-shadow: inset 0 0 0 1.5px rgba(233, 207, 150, 0.7); color: #F0D8A0; }
+.feat-l { font-size: 0.9rem; line-height: 1.3; color: #FFF8EE; }
+.search-kind { color: var(--accent); display: inline-flex; }

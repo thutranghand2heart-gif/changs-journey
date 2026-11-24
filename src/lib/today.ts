@@ -14,7 +14,9 @@ export interface TodayInfo {
 }
 
 /** Computed only when the app is open; nothing is scheduled in the background. */
-export function smartToday(j: Journey, days: Day[], acts: Activity[], docs: WalletDoc[], now: Date = new Date()): TodayInfo {
+/** `disp` shows user-entered text in the current language (stored translation) — never changes the data. */
+type Disp = (store: 'docs' | 'days', rec: any, field: string) => string;
+export function smartToday(j: Journey, days: Day[], acts: Activity[], docs: WalletDoc[], now: Date = new Date(), disp: Disp = (_s, r, f) => r[f]): TodayInfo {
   const localDate = todayIn(j.timeZone, now);
   const localTime = timeIn(j.timeZone, now);
   const phase = localDate < j.startDate ? 'before' : localDate > j.endDate ? 'after' : 'during';
@@ -26,8 +28,8 @@ export function smartToday(j: Journey, days: Day[], acts: Activity[], docs: Wall
     const flightDocs = docs.filter((d) => d.category === 'flight');
     if (flightDocs.length && flightDocs.every((d) => !(d.attachmentIds ?? []).length && !d.blobId)) info.reminders.push({ text: t('Chưa có vé/QR chuyến bay thật trong Ví — hãy thêm bản gốc.'), link: `${base}/wallet` });
     const pending = docs.filter((d) => d.bookingStatus === 'payment-pending' || d.bookingStatus === 'reservation-requested');
-    for (const d of pending) info.reminders.push({ text: t('Đang chờ: {0} ({1})', d.title, d.bookingStatus === 'payment-pending' ? t('chờ thanh toán') : t('đã gửi yêu cầu')), link: `${base}/wallet` });
-    for (const d of days) if (!d.freeDay && d.remindFrom && d.notes && localDate >= d.remindFrom) info.reminders.push({ text: t('Ngày {0}: {1}', d.index, d.notes), link: `${base}/journey/${d.id}` });
+    for (const d of pending) info.reminders.push({ text: t('Đang chờ: {0} ({1})', disp('docs', d, 'title'), d.bookingStatus === 'payment-pending' ? t('chờ thanh toán') : t('đã gửi yêu cầu')), link: `${base}/wallet` });
+    for (const d of days) if (!d.freeDay && d.remindFrom && d.notes && localDate >= d.remindFrom) info.reminders.push({ text: t('Ngày {0}: {1}', d.index, disp('days', d, 'notes')), link: `${base}/journey/${d.id}` });
     if (info.daysUntil <= 14) info.reminders.push({ text: t('Trước khi đi: chạy Kiểm tra sẵn sàng offline và tạo bản sao lưu.'), link: '/offline' });
   }
 

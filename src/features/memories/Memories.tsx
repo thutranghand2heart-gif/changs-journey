@@ -45,7 +45,7 @@ export function MemoriesHub({ view = 'book' }: { view?: string }) {
             return (
               <section key={d.id} className="book-page glass-card">
                 <header>
-                  <span className="muted xsmall">{t('Ngày')}{' '}{d.index} · {fmtShort(d.date)}</span>
+                  <span className="muted xsmall">{t('Ngày {0}', d.index)} · {fmtShort(d.date)}</span>
                   <h3 className="display"><Tx s="days" r={d} f="title" /></h3>
                 </header>
                 {list.map((m) => <MemoryCard key={m.id} m={m} />)}

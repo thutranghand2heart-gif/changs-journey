@@ -100,7 +100,7 @@ function Editor({ initial, isNew }: { initial: Memory; isNew: boolean }) {
           <Field label={t('Ngày')}>
             <select value={m.dayId ?? ''} onChange={(e: any) => setM({ ...m, dayId: e.target.value || undefined })}>
               <option value="">—</option>
-              {days.map((d) => <option key={d.id} value={d.id}>{t('Ngày')}{' '}{d.index}</option>)}
+              {days.map((d) => <option key={d.id} value={d.id}>{t('Ngày {0}', d.index)}</option>)}
             </select>
           </Field>
           <Field label={t('Bố cục')}>
