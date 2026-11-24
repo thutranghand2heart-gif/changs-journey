@@ -453,3 +453,12 @@ body.no-scroll .tabbar { display: none; }
 .tx-toggle{font-size:12px;opacity:.75;background:none;border:0;color:inherit;text-decoration:underline;padding:4px 0}
 .tx-badge{font-size:11px;opacity:.6;margin-left:6px}
 body.no-scroll .update-banner{display:none}
+/* v1.0.3 — iPhone form fixes */
+.sheet-backdrop { inset: auto 0 auto 0; top: var(--vvt, 0px); height: var(--vvh, 100dvh); }
+.kb-open .sheet { padding-bottom: 8px; max-height: calc(var(--vvh, 100dvh) - 12px); }
+.row.gap > .field { flex: 1 1 0; min-width: 0; }
+.row.gap:has(> .field) { align-items: flex-end; }
+input[type=date], input[type=time], input[type=datetime-local] { -webkit-appearance: none; appearance: none; display: block; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; text-align: left; min-height: 48px; }
+input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-and-time-value { text-align: left; }
+.travel-doc .itin-day { margin: 6px 0; }
+.travel-doc .itin-day b { display: inline-block; min-width: 5.5em; }

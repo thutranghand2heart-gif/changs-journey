@@ -8,6 +8,9 @@ import { publicDocs } from '../../lib/search';
 import { attIds, hotelOf } from '../../lib/wallet';
 import { t } from '../../lib/i18n';
 import { DocViewer } from './WalletTab';
+import { useCtState } from '../../ui/contentTx';
+import { detectLang, displayText } from '../../lib/contentI18n';
+import { airlineName, airportName, cityName } from '../../lib/cityNames';
 
 // The CARD has its own display language (e.g. Chinese for an officer) — independent of the app language.
 type L = 'vi' | 'zh' | 'en' | 'ko';
@@ -58,20 +61,73 @@ export function TravelDocPage() {
   const out = flights.find((d) => d.id === outId);
   const ret = flights.find((d) => d.id === retId);
   const hotelDoc = hotels.find((d) => d.id === (j.travelCard?.hotelId ?? j.hotelDocId));
-  const hotel = hotelDoc?.hotel?.name || hotelDoc?.hotel?.addressZh ? { name: hotelDoc.hotel.name ?? hotelDoc.title, addressZh: hotelDoc.hotel.addressZh, addressEn: hotelDoc.hotel.addressEn, phone: hotelDoc.hotel.phone, bookingRef: hotelDoc.hotel.bookingRef } : hotelOf(j, docs);
+  const hotel = hotelDoc?.hotel?.name || hotelDoc?.hotel?.addressZh ? { name: hotelDoc.hotel.name ?? hotelDoc.title, nameZh: hotelDoc.hotel.nameZh, addressZh: hotelDoc.hotel.addressZh, addressEn: hotelDoc.hotel.addressEn, phone: hotelDoc.hotel.phone, bookingRef: hotelDoc.hotel.bookingRef } : hotelOf(j, docs);
   const nights = Math.round((Date.parse(j.endDate) - Date.parse(j.startDate)) / 86400000);
-  const cityByDay = days.map((d) => ({ d, cities: Array.from(new Set(activities.filter((a) => a.dayId === d.id).map((a) => places.find((p) => p.id === a.placeId)?.city).filter(Boolean))) as string[] }));
+  // Itinerary in the CARD language: Chinese names the user entered (nameZh) first, then saved translations, then
+  // built-in city names; anything else stays as the original text and is counted so the user can fix it.
+  const { map: txMap } = useCtState();
+  const inCard = (store: 'activities' | 'places' | 'days', rec: any, field: string): { text: string; local: boolean } => {
+    const orig = (rec?.[field] ?? '').trim();
+    if (!orig || detectLang(orig) === lang) return { text: orig, local: true };
+    const r = displayText(txMap, store, rec, field, lang);
+    return r.translated && r.text ? { text: r.text, local: true } : { text: orig, local: false };
+  };
+  let missingLocal = 0;
+  const NO_STOP = new Set(['flight', 'transport', 'rest', 'hotel']);
+  const itinerary = days
+    .map((d) => {
+      const acts = activities.filter((a) => a.dayId === d.id).sort((a, b) => (a.start ?? '99').localeCompare(b.start ?? '99'));
+      const cities = Array.from(new Set(acts.map((a) => places.find((p) => p.id === a.placeId)?.city).filter(Boolean) as string[])).map((c) => {
+        const known = cityName(c, lang);
+        if (known) return known;
+        const pl = places.find((p) => p.city === c);
+        const x = inCard('places', pl, 'city');
+        if (!x.local) missingLocal++;
+        return x.text;
+      });
+      const stops: string[] = [];
+      for (const a of acts) {
+        if (NO_STOP.has(a.kind)) continue;
+        const p = places.find((x) => x.id === a.placeId);
+        let label: string | undefined;
+        if (lang === 'zh') label = a.nameZh || p?.nameZh;
+        if (!label) {
+          const x = inCard('activities', a, 'title');
+          const y = p ? inCard('places', p, 'name') : undefined;
+          const pick = x.local ? x : y?.local ? y : x;
+          if (!pick.local) missingLocal++;
+          label = pick.text;
+        }
+        // generic entries ("Lunch", "Dinner") with no local name add nothing for an officer — leave them out
+        if (a.kind === 'meal' && !(lang === 'zh' && (a.nameZh || p?.nameZh)) && !inCard('activities', a, 'title').local) {
+          missingLocal = Math.max(0, missingLocal - 1);
+          continue;
+        }
+        if (label && !stops.includes(label)) stops.push(label);
+      }
+      return { d, cities, stops };
+    })
+    .filter((x) => x.cities.length || x.stops.length);
+  const fmtCardDate = (iso: string) => {
+    try {
+      return new Date(iso + 'T12:00:00').toLocaleDateString({ zh: 'zh-CN', en: 'en-GB', ko: 'ko-KR', vi: 'vi-VN' }[lang], { month: 'short', day: 'numeric', weekday: 'short' });
+    } catch {
+      return iso;
+    }
+  };
 
   const flightBlock = (d: WalletDoc | undefined, head: string) => {
     if (!d) return null;
     const f: FlightInfo = d.flight ?? {};
-    const num = [f.airline, f.flightNumber].filter(Boolean).join(' ');
+    const num = [airlineName(f.flightNumber, lang) ?? f.airline, f.flightNumber].filter(Boolean).join(' ');
+    const ap = (x?: string) => airportName(x, lang) ?? x;
+    const docTitle = displayText(txMap, 'docs', d, 'title', lang);
     return (
       <section>
         <h3>{L(head)}</h3>
-        <p className="big">{num || d.title}</p>
-        {(detail || show.airportTimes) && (f.depAirport || f.depTime) && <p>{L('from')}: {[f.depAirport, f.depTerminal].filter(Boolean).join(' ')} {[f.depDate, f.depTime].filter(Boolean).join(' ')}</p>}
-        {(detail || show.airportTimes) && (f.arrAirport || f.arrTime) && <p>{L('to')}: {[f.arrAirport, f.arrTerminal].filter(Boolean).join(' ')} {[f.arrDate, f.arrTime].filter(Boolean).join(' ')}</p>}
+        <p className="big">{num || (docTitle.translated ? docTitle.text : d.title)}</p>
+        {(detail || show.airportTimes) && (f.depAirport || f.depTime) && <p>{L('from')}: {[ap(f.depAirport), f.depTerminal].filter(Boolean).join(' ')} {[f.depDate, f.depTime].filter(Boolean).join(' ')}</p>}
+        {(detail || show.airportTimes) && (f.arrAirport || f.arrTime) && <p>{L('to')}: {[ap(f.arrAirport), f.arrTerminal].filter(Boolean).join(' ')} {[f.arrDate, f.arrTime].filter(Boolean).join(' ')}</p>}
         {show.bookingRefs && f.bookingRef && <p>{L('ref')}: {f.bookingRef}</p>}
         <button className="btn small ghost no-print" onClick={() => go(`/j/${j.id}/wallet?d=${d.id}`)}><LuPencil size={12} /> {t('Sửa thông tin')}</button>
         {!num && <p className="muted xsmall no-print">{t('Hồ sơ này chưa có chi tiết chuyến bay — bấm “Sửa thông tin” để bổ sung.')}</p>}
@@ -102,7 +158,8 @@ export function TravelDocPage() {
         {hotel && (
           <section>
             <h3>{L('hotel')}</h3>
-            <p className="big">{hotel.name}</p>
+            <p className="big">{lang === 'zh' && hotel.nameZh ? hotel.nameZh : hotel.name}</p>
+            {lang === 'zh' && hotel.nameZh && detail && hotel.name && <p>{hotel.name}</p>}
             {hotel.addressZh && <p className="big-zh" lang="zh-CN">{hotel.addressZh}</p>}
             {(detail || lang !== 'zh') && hotel.addressEn && <p>{hotel.addressEn}</p>}
             {(detail || show.hotelContact) && hotel.phone && <p>{L('phone')}: {hotel.phone}</p>}
@@ -111,10 +168,15 @@ export function TravelDocPage() {
         )}
         {flightBlock(out, 'arrival')}
         {flightBlock(ret, 'return')}
-        {(detail || show.itinerary) && cityByDay.some((x) => x.cities.length) && (
-          <section>
+        {(detail || show.itinerary) && itinerary.length > 0 && (
+          <section data-testid="travel-card-itinerary">
             <h3>{L('itinerary')}</h3>
-            {cityByDay.filter((x) => x.cities.length).map(({ d, cities }) => <p key={d.id}>{d.date}: {cities.join(', ')}</p>)}
+            {itinerary.map(({ d, cities, stops }) => (
+              <p key={d.id} className="itin-day">
+                <b>{fmtCardDate(d.date)}</b> {cities.join('、')}{cities.length && stops.length ? ' — ' : ''}{stops.join(lang === 'zh' ? '、' : ', ')}
+              </p>
+            ))}
+            {missingLocal > 0 && <p className="muted xsmall no-print">{t('{0} mục chưa có tên bằng ngôn ngữ của thẻ nên đang hiện bản gốc. Thêm tên tiếng Trung cho hoạt động/địa điểm, hoặc dùng “Dịch nội dung bạn nhập”.', missingLocal)}</p>}
           </section>
         )}
         <p className="muted xsmall">{L('note')}</p>

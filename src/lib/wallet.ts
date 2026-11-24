@@ -82,10 +82,10 @@ export function newRecord(journeyId: string, recordType: 'booking' | 'document',
 }
 
 /** Canonical hotel for Home / travel card: the linked Wallet record if any, else the journey's supplied hotel. */
-export function hotelOf(j: Journey, docs: WalletDoc[]): { name: string; addressZh?: string; addressEn?: string; phone?: string; docId?: string } | undefined {
+export function hotelOf(j: Journey, docs: WalletDoc[]): { name: string; nameZh?: string; addressZh?: string; addressEn?: string; phone?: string; docId?: string } | undefined {
   const d = j.hotelDocId ? docs.find((x) => x.id === j.hotelDocId && !x.encrypted) : undefined;
-  if (d?.hotel?.name || d?.hotel?.addressZh) return { name: d.hotel.name ?? d.title, addressZh: d.hotel.addressZh, addressEn: d.hotel.addressEn, phone: d.hotel.phone, docId: d.id };
-  if (j.hotel) return { name: j.hotel.name, addressZh: j.hotel.addressZh, addressEn: j.hotel.addressEn };
+  if (d?.hotel?.name || d?.hotel?.addressZh) return { name: d.hotel.name ?? d.title, nameZh: d.hotel.nameZh, addressZh: d.hotel.addressZh, addressEn: d.hotel.addressEn, phone: d.hotel.phone, docId: d.id };
+  if (j.hotel) return { name: j.hotel.name, nameZh: j.hotel.nameZh, addressZh: j.hotel.addressZh, addressEn: j.hotel.addressEn };
   return undefined;
 }
 

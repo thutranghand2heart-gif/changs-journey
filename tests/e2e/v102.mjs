@@ -5,6 +5,7 @@ import { chromium } from 'playwright';
 import { cpSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 
 const { OLD_DIST, NEW_DIST = 'dist', SITE, BASE } = process.env;
+const NEW_VERSION = JSON.parse(readFileSync('package.json', 'utf8')).version;
 const APP = `${SITE}/changs-journey`;
 const SHOTS = 'tests/e2e/shots';
 mkdirSync(SHOTS, { recursive: true });
@@ -73,9 +74,9 @@ await step('U2 deploy v1.0.2: app updates in place, translations store added, no
   for (let i = 0; i < 6; i++) {
     await page.reload(); // a same-URL goto would only change the hash, not reload
     await page.waitForTimeout(1500);
-    if ((await page.evaluate(() => document.documentElement.dataset.appVersion)) === '1.0.2') break;
+    if ((await page.evaluate(() => document.documentElement.dataset.appVersion)) === NEW_VERSION) break;
   }
-  assert((await page.evaluate(() => document.documentElement.dataset.appVersion)) === '1.0.2', 'not on 1.0.2');
+  assert((await page.evaluate(() => document.documentElement.dataset.appVersion)) === NEW_VERSION, 'not on ' + NEW_VERSION);
   assert(Array.isArray(await all('translations')), 'translations store missing');
   const after = { acts: (await all('activities')).length, days: (await all('days')).length, docs: (await all('docs')).length, mems: (await all('memories')).length, atts: (await all('attachments'))?.length };
   assert(JSON.stringify(after) === JSON.stringify(before), `${JSON.stringify(before)} → ${JSON.stringify(after)}`);

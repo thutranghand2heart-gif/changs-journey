@@ -433,6 +433,7 @@ function HotelFields({ d, onChange }: { d: WalletDoc; onChange: (d: WalletDoc) =
     <div className="card stack-s">
       <h4>🏨 {t('Thông tin khách sạn')}</h4>
       <Field label={t('Tên khách sạn')}><input value={h.name ?? ''} onChange={set('name')} /></Field>
+      <Field label={t('Tên khách sạn tiếng Trung (hiện trên thẻ nhập cảnh)')}><input lang="zh-CN" value={h.nameZh ?? ''} onChange={set('nameZh')} /></Field>
       <Field label={t('Địa chỉ tiếng Trung / địa phương')}><input value={h.addressZh ?? ''} onChange={set('addressZh')} /></Field>
       <Field label={t('Địa chỉ tiếng Anh')}><input value={h.addressEn ?? ''} onChange={set('addressEn')} /></Field>
       <div className="row gap">

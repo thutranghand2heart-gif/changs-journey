@@ -71,7 +71,7 @@ export interface Journey {
   wardrobePlaceholder?: string;
   postcardDefault?: string;
   settings: JourneySettings;
-  hotel?: { name: string; addressZh?: string; addressEn?: string; note?: string; verified: boolean };
+  hotel?: { name: string; nameZh?: string; addressZh?: string; addressEn?: string; note?: string; verified: boolean };
   /** v2: canonical hotel booking record in Wallet. When set, it is the source of truth for hotel info. */
   hotelDocId?: ID;
   travelCard?: TravelCardSettings;
@@ -187,7 +187,7 @@ export interface FlightInfo {
   baggage?: string;
 }
 
-export interface HotelInfo { name?: string; addressZh?: string; addressEn?: string; phone?: string; checkIn?: string; checkOut?: string; bookingRef?: string }
+export interface HotelInfo { name?: string; nameZh?: string; addressZh?: string; addressEn?: string; phone?: string; checkIn?: string; checkOut?: string; bookingRef?: string }
 
 export type AttachmentKind = 'eticket' | 'confirmation' | 'boarding-pass' | 'qr' | 'photo' | 'screenshot' | 'receipt' | 'other';
 /** One stored file (bytes live in 'blobs'); linked from any number of WalletDoc records via attachmentIds. */

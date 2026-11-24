@@ -5,6 +5,20 @@ import './styles.css';
 document.documentElement.dataset.appVersion = __APP_VERSION__;
 createRoot(document.getElementById('root')!).render(<App />);
 
+// iOS keyboard: keep bottom sheets glued to the visible area (above the keyboard) instead of leaving a dark gap.
+const vv = window.visualViewport;
+if (vv) {
+  const sync = () => {
+    const r = document.documentElement;
+    r.style.setProperty('--vvh', `${vv.height}px`);
+    r.style.setProperty('--vvt', `${vv.offsetTop}px`);
+    r.classList.toggle('kb-open', innerHeight - vv.height > 120);
+  };
+  vv.addEventListener('resize', sync);
+  vv.addEventListener('scroll', sync);
+  sync();
+}
+
 // Service worker: caches the app shell for offline use. Registration result is
 // reported truthfully on the Offline Readiness screen, never assumed.
 // Updates: the new worker activates immediately; when it takes control of an already
