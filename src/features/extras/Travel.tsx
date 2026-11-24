@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { LuCopy, LuVolume2, LuMaximize2, LuX, LuPlus, LuTrash2, LuRefreshCw } from 'react-icons/lu';
 import type { ChecklistItem, Place, WalletDoc, WeatherSnapshot } from '../../db/schema';
@@ -13,13 +14,14 @@ import { Tx } from '../../ui/contentTx';
 
 // ───────── Large text card (show to drivers / staff)
 export function BigText({ zh, py, vi, onClose }: { zh: string; py?: string; vi?: string; onClose: () => void }) {
-  return (
+  return createPortal(
     <div className="bigtext" role="dialog" aria-modal="true" onClick={onClose}>
       <button className="icon-btn bigtext-close" aria-label={t('Đóng')}><LuX size={28} /></button>
       <p className="bigtext-zh" lang="zh-CN">{zh}</p>
       {py && <p className="bigtext-py">{py}</p>}
       {vi && <p className="bigtext-vi">{vi}</p>}
-    </div>
+    </div>,
+    document.body,
   );
 }
 

@@ -104,6 +104,8 @@ export function airportName(typed: string | undefined, lang: UiLang): string | u
       }
       const nk = norm(k);
       if (n === nk || n.includes(nk) || (nk.length >= 5 && n.length >= 5 && editDistance(n, nk) <= 2)) return a.names[lang];
+      // word by word, so a typo in "Airport" ("Inchoen Ariport") doesn't hide the airport name
+      if (nk.length >= 5 && raw.split(/[\s,/-]+/).some((w) => norm(w).length >= 5 && editDistance(norm(w), nk) <= 2)) return a.names[lang];
     }
   return undefined;
 }

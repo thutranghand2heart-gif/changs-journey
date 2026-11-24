@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { onChange } from '../db/idb';
 import * as db from '../db/idb';
@@ -102,10 +103,21 @@ export function PageHeader({ title, sub, back, right }: { title: ReactNode; sub?
   );
 }
 
+const THEME_VARS = ['--bg', '--bg2', '--card', '--card-border', '--text', '--muted', '--accent', '--accent2', '--display'];
 export function Sheet({ open, onClose, title, children, full }: { open: boolean; onClose: () => void; title?: ReactNode; children: ReactNode; full?: boolean }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const start = useRef<number | null>(null);
   const [dy, setDy] = useState(0);
+  const anchor = useRef<HTMLSpanElement | null>(null);
+  const [vars, setVars] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!open || !anchor.current?.parentElement) return;
+    // the sheet is portalled to <body>; carry over the journey theme colours from where it was opened
+    const cs = getComputedStyle(anchor.current.parentElement);
+    const v: Record<string, string> = {};
+    for (const k of THEME_VARS) { const x = cs.getPropertyValue(k).trim(); if (x) v[k] = x; }
+    setVars(v);
+  }, [open]);
   useEffect(() => {
     if (!open) return;
     const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -117,8 +129,12 @@ export function Sheet({ open, onClose, title, children, full }: { open: boolean;
     };
   }, [open]);
   if (!open) return null;
+  // Portal to <body>: a sheet opened from inside another sheet (e.g. a confirm) must not be clipped by its parent.
   return (
-    <div className="sheet-backdrop" onClick={onClose}>
+    <>
+    <span ref={anchor} hidden />
+    {createPortal(
+    <div className="sheet-backdrop" style={vars} onClick={onClose}>
       <div
         ref={ref}
         className={`sheet ${full ? 'sheet-full' : ''}`}
@@ -147,7 +163,10 @@ export function Sheet({ open, onClose, title, children, full }: { open: boolean;
         </div>
         <div className="sheet-body">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
+  )}
+    </>
   );
 }
 

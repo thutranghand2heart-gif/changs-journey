@@ -20,6 +20,8 @@ test('airline from flight number prefix', () => {
 
 test('airport names tolerate codes, extra words and small typos', () => {
   assert.equal(airportName('Inchoen', 'zh'), '仁川国际机场');
+  assert.equal(airportName('Inchoen Ariport', 'zh'), '仁川国际机场');
+  assert.equal(airportName('Shanghai Pudong Ariport', 'zh'), '上海浦东国际机场');
   assert.equal(airportName('ICN', 'zh'), '仁川国际机场');
   assert.equal(airportName('Incheon International Airport', 'ko'), '인천국제공항');
   assert.equal(airportName('Pudong', 'zh'), '上海浦东国际机场');

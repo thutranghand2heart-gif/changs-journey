@@ -40,3 +40,7 @@ declare module 'jszip' {
 declare module '*.css';
 
 declare const __APP_VERSION__: string;
+
+declare module 'react-dom' {
+  export function createPortal(children: any, container: Element | DocumentFragment, key?: string | null): any;
+}

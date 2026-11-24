@@ -18,7 +18,7 @@ import { tokensFor } from '../../lib/themes';
 import { hotelOf } from '../../lib/wallet';
 import { LanguageButton } from '../../ui/Language';
 import { getLang, t } from '../../lib/i18n';
-import { Tx } from '../../ui/contentTx';
+import { Tx, TxNudge } from '../../ui/contentTx';
 
 const seenOpening = new Set<string>();
 const NUM_VI = ['', 'Một', 'Hai', 'Ba', 'Bốn', 'Năm', 'Sáu', 'Bảy', 'Tám', 'Chín', 'Mười'];
@@ -78,6 +78,7 @@ export function JourneyHome() {
           <button className="icon-btn glass" aria-label={t('Giao diện & ảnh nền')} onClick={() => go(`${base}/appearance`)}><LuPalette size={20} /></button>
         </div>
 
+        <TxNudge journeyId={j.id} />
         <section className="hero">
           <p className="hero-kicker">{j.subtitle ?? j.destinations.join(' · ')}</p>
           <h1 className="hero-title display"><Tx s="journeys" r={j} f="title" /></h1>

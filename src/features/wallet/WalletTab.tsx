@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { LuPlus, LuFileText, LuLock, LuCopy, LuX, LuZoomIn, LuZoomOut, LuReceipt, LuExternalLink, LuLink, LuPaperclip, LuImage, LuQrCode, LuUnlink, LuTrash2 } from 'react-icons/lu';
 import type { Activity, Attachment, AttachmentKind, BookingStatus, Day, PaymentStatus, WalletDoc } from '../../db/schema';
@@ -493,7 +494,8 @@ export function DocViewer({ att, onClose }: { att: Attachment; onClose: () => vo
     if (cur) await db.put('attachments', { ...cur, lastOpenedOkAt: nowIso() });
   };
   const isPdf = (mime ?? att.mime ?? '').includes('pdf');
-  return (
+  // portalled to <body> so it always covers sheets (which are portalled too)
+  return createPortal(
     <div className="viewer" role="dialog" aria-modal="true" aria-label={att.label}>
       <div className="viewer-bar">
         <button className="icon-btn" aria-label={t('Đóng trình xem')} onClick={onClose}><LuX size={24} /></button>
@@ -514,7 +516,8 @@ export function DocViewer({ att, onClose }: { att: Attachment; onClose: () => vo
         {url && isPdf && <iframe title={att.label} src={url} className="pdf-frame" onLoad={markOk} />}
       </div>
       {isPdf && <p className="viewer-foot muted xsmall">{t('Nếu PDF chỉ hiện trang đầu, nhấn biểu tượng ↗ để mở bằng trình xem của iPhone.')}</p>}
-    </div>
+    </div>,
+    document.body,
   );
 }
 

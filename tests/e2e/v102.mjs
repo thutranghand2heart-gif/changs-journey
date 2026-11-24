@@ -85,6 +85,9 @@ await step('U2 deploy v1.0.2: app updates in place, translations store added, no
 // Route installed after the upgrade (Playwright request interception would otherwise stand in for the SW update check).
 await ctx.route('https://api.mymemory.translated.net/**', mockRoute);
 await step('T1 nothing is sent before consent (auto-translate stays off)', async () => {
+  await go('#/j/demo-journey');
+  await page.getByTestId('tx-nudge').waitFor({ timeout: 8000 });
+  await page.getByTestId('tx-nudge').getByRole('button', { name: 'Bật dịch' }).waitFor();
   await go('#/translate');
   await page.getByTestId('tx-consent').waitFor();
   await page.waitForTimeout(9500);
@@ -215,6 +218,35 @@ await step('T9 quota: stops cleanly, keeps what was saved, explains it', async (
   assert(rows.length === 4, `expected 4 saved before quota, got ${rows.length}`);
   quotaAfter = Infinity;
   void s;
+});
+
+await step('T11 renamed title: Home shows a "translate now" notice; one tap translates it (current language first)', async () => {
+  const d3 = (await all('days')).find((d) => d.id === 'demo-d3');
+  await put('days', { ...d3, title: 'Renamed third day' });
+  await setLang('zh');
+  await page.reload();
+  await page.waitForTimeout(800);
+  await go('#/j/demo-journey');
+  const nudge = page.getByTestId('tx-nudge');
+  await nudge.waitFor({ timeout: 8000 });
+  await nudge.getByRole('button', { name: '立即翻译' }).click();
+  for (let i = 0; i < 30 && !(await bodyText()).includes('[zh-CN] Renamed third day'); i++) await page.waitForTimeout(1000);
+  assert((await bodyText()).includes('[zh-CN] Renamed third day'), 'renamed title not translated on Home');
+});
+
+await step('S1 a confirm opened from inside a sheet is fully visible (buttons inside the screen)', async () => {
+  await setLang('vi');
+  await go('#/j/demo-journey/wallet');
+  await page.locator('button').filter({ hasText: /Demo/ }).first().click();
+  await page.waitForTimeout(500);
+  const del = page.getByRole('button', { name: /Xóa hồ sơ/ }).last();
+  await del.scrollIntoViewIfNeeded();
+  await del.click();
+  await page.waitForTimeout(500);
+  const boxes = await page.locator('.sheet').last().locator('button.btn').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().bottom));
+  assert(boxes.length >= 2 && boxes.every((b) => b <= 844), `buttons cut off: ${boxes}`);
+  await page.getByRole('button', { name: 'Hủy' }).click();
+  await page.keyboard.press('Escape');
 });
 
 await step('T10 no horizontal overflow on the translate page in all four languages', async () => {

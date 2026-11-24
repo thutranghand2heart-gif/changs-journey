@@ -462,3 +462,4 @@ input[type=date], input[type=time], input[type=datetime-local] { -webkit-appeara
 input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-and-time-value { text-align: left; }
 .travel-doc .itin-day { margin: 6px 0; }
 .travel-doc .itin-day b { display: inline-block; min-width: 5.5em; }
+.tx-nudge { display: flex; align-items: center; gap: 10px; margin: 8px 0 12px; padding: 10px 12px; }

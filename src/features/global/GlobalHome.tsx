@@ -10,6 +10,7 @@ import { BookMark } from '../../art/BookMark';
 import { LanguageButton } from '../../ui/Language';
 import { APP_VERSION } from '../../ui/UpdateNotice';
 import { Tx } from '../../ui/contentTx';
+import { TxNudge } from '../../ui/contentTx';
 
 export function GlobalHome() {
   const journeys = useStore<Journey>('journeys');
@@ -48,6 +49,7 @@ export function GlobalHome() {
           <button className="link-btn center" onClick={() => go('/import')}><LuFileUp size={14} /> {' '}{t('Nhập hành trình từ tệp')}</button>
         )}
 
+        <TxNudge />
         <h2 className="section-title">{t('myJourneys')}</h2>
         <div className="journey-list">
           {list.map((j) => (
