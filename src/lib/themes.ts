@@ -22,9 +22,9 @@ export function tokensFor(j: Pick<Journey, 'settings'> | undefined): ThemeTokens
 
 export function themeStyle(t: ThemeTokens, font: string): Record<string, string> {
   const fonts: Record<string, string> = {
-    storybook: '"Cormorant Garamond", "Iowan Old Style", Georgia, "Times New Roman", "Noto Serif CJK SC", "Songti SC", serif',
+    storybook: '"Cormorant Garamond", "Iowan Old Style", Georgia, "Times New Roman", "PingFang SC", "Hiragino Sans GB", "Apple SD Gothic Neo", "Noto Sans CJK SC", serif',
     modern: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "PingFang SC", "Apple SD Gothic Neo", sans-serif',
-    handwritten: '"Bradley Hand", "Segoe Print", "Snell Roundhand", Georgia, serif',
+    handwritten: '"Bradley Hand", "Segoe Print", "Snell Roundhand", Georgia, "PingFang SC", "Apple SD Gothic Neo", serif',
   };
   return {
     '--bg': t.bg, '--bg2': t.bg2, '--card': t.card, '--card-border': t.cardBorder, '--text': t.text, '--muted': t.muted, '--accent': t.accent, '--accent2': t.accent2,

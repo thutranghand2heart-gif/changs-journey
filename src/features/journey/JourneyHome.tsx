@@ -80,7 +80,7 @@ export function JourneyHome() {
 
         <TxNudge journeyId={j.id} />
         <section className="hero">
-          <p className="hero-kicker">{j.subtitle ?? j.destinations.join(' · ')}</p>
+          <p className="hero-kicker">{j.subtitle ? <Tx s="journeys" r={j} f="subtitle" /> : j.destinations.join(' · ')}</p>
           <h1 className="hero-title display"><Tx s="journeys" r={j} f="title" /></h1>
           <p className="hero-dates"><LuCalendar size={14} /> {fmtShort(j.startDate)} – {fmtShort(j.endDate)}, {j.endDate.slice(0, 4)}</p>
         </section>

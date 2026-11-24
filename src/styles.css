@@ -14,7 +14,7 @@
   --muted: rgba(255, 248, 238, 0.72);
   --accent: #D5B477;
   --accent2: #8B1E2D;
-  --display: "Cormorant Garamond", "Iowan Old Style", Georgia, "Times New Roman", "Songti SC", serif;
+  --display: "Cormorant Garamond", "Iowan Old Style", Georgia, "Times New Roman", "PingFang SC", "Hiragino Sans GB", "Apple SD Gothic Neo", "Noto Sans CJK SC", serif;
   --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Apple SD Gothic Neo", "Noto Sans CJK SC", Roboto, sans-serif;
   --r-s: 10px;
   --r-m: 16px;
@@ -70,7 +70,7 @@ ul { padding-left: 20px; margin: 4px 0; }
 .boot { min-height: 100dvh; background: radial-gradient(circle at 70% 30%, #1a5544, #0b2a23); }
 
 /* ───────── Pages ───────── */
-.page { padding: calc(var(--safe-t) + 12px) calc(var(--sp) + var(--safe-r)) calc(var(--tabbar-h) + var(--safe-b) + 32px) calc(var(--sp) + var(--safe-l)); max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 1; }
+.page { padding: calc(var(--safe-t) + 22px) calc(var(--sp) + var(--safe-r)) calc(var(--tabbar-h) + var(--safe-b) + 32px) calc(var(--sp) + var(--safe-l)); max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 1; }
 .theme-global { background: radial-gradient(120% 80% at 80% 0%, #1a5544 0%, #0b2a23 55%, #071d18 100%); min-height: 100dvh; }
 .page.theme-global { max-width: none; padding-left: max(var(--sp), calc((100vw - 760px) / 2)); padding-right: max(var(--sp), calc((100vw - 760px) / 2)); }
 .page-head { display: flex; align-items: center; gap: 8px; min-height: 48px; }
@@ -466,3 +466,6 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 .card.user-text h4 { margin: 0 0 6px; font-size: 0.9rem; color: var(--muted); font-weight: 600; }
 .card.user-text p { margin: 0; white-space: pre-wrap; line-height: 1.55; }
 .act-time .icon-btn { margin-left: auto; }
+/* v1.0.6 — crisp Chinese/Korean headings (no synthetic bold of Songti), more room under the Dynamic Island */
+.page-head h1, .display { font-synthesis-weight: none; -webkit-font-smoothing: antialiased; }
+.page-head h1 { line-height: 1.2; }

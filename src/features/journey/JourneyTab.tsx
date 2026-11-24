@@ -8,7 +8,7 @@ import { fmtDateVi, fmtShort, addDays, tzLabel } from '../../lib/time';
 import { uid } from '../../lib/util';
 import { ActivitySheet } from './ActivitySheet';
 import { t, tr } from '../../lib/i18n';
-import { Tx } from '../../ui/contentTx';
+import { Tx, useCt } from '../../ui/contentTx';
 import { PlaceEditor } from './PlaceEditor';
 
 export const STATUS_LABEL: Record<ActivityStatus, string> = { draft: tr('Nháp'), tentative: tr('Dự kiến'), booked: tr('Đã đặt'), completed: tr('Đã xong'), cancelled: tr('Đã hủy') };
@@ -67,6 +67,7 @@ export function JourneyTab({ dayId }: { dayId?: string }) {
 
 function DayView({ day }: { day: Day }) {
   const { journey: j, activities, places } = useJourney();
+  const ct = useCt();
   const acts = activities.filter((a) => a.dayId === day.id);
   const [open, setOpen] = useState<string | null>(queryParam('a'));
   const [editDay, setEditDay] = useState(false);
@@ -78,7 +79,7 @@ function DayView({ day }: { day: Day }) {
     <div className="page">
       <PageHeader
         title={<span className="display">{t('Ngày')}{' '}{day.index}: <Tx s="days" r={day} f="title" /></span>}
-        sub={`${fmtDateVi(day.date)}${day.subtitle ? ' · ' + day.subtitle.replace(/^[^·]*·\s*/, '') : ''}`}
+        sub={`${fmtDateVi(day.date)}${day.subtitle ? ' · ' + ct('days', day, 'subtitle').replace(/^[^·]*·\s*/, '') : ''}`}
         back={`/j/${j.id}/journey`}
         right={<button className="icon-btn" aria-label={t('Sửa ngày')} onClick={() => setEditDay(true)}><LuPencil size={18} /></button>}
       />
@@ -93,11 +94,11 @@ function DayView({ day }: { day: Day }) {
             <button className="btn small" onClick={() => go(`/j/${j.id}/memories/new?day=${day.id}&private=1`)}><LuLock size={14} /> {' '}{t('Viết nhật ký riêng tư')}</button>
             <button className="btn small ghost" onClick={() => setAdding(true)}><LuPlus size={14} /> {' '}{t('Tự thêm một ghi chú')}</button>
           </div>
-          {acts.length > 0 && <Timeline acts={acts} onOpen={setOpen} placeName={(id) => places.find((p) => p.id === id)?.name} />}
+          {acts.length > 0 && <Timeline acts={acts} onOpen={setOpen} placeName={(id) => { const p = places.find((x) => x.id === id); return p ? ct('places', p, 'name') : undefined; }} />}
         </div>
       ) : (
         <>
-          <Timeline acts={acts} onOpen={setOpen} placeName={(id) => places.find((p) => p.id === id)?.name} />
+          <Timeline acts={acts} onOpen={setOpen} placeName={(id) => { const p = places.find((x) => x.id === id); return p ? ct('places', p, 'name') : undefined; }} />
           {!acts.length && <p className="muted center">{t('Chưa có hoạt động.')}</p>}
           <button className="btn" onClick={() => setAdding(true)}><LuPlus /> {' '}{t('Thêm hoạt động')}</button>
         </>
