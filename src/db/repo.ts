@@ -7,6 +7,7 @@ import { bundleEntries, type JourneyBundle } from '../lib/journeyFile';
 import { remapAsNew } from '../lib/backup';
 import { nowIso, uid } from '../lib/util';
 import { addDays, daysBetween, weekdayVi } from '../lib/time';
+import { t } from '../lib/i18n';
 
 export const DEFAULT_SETTINGS: GlobalSettings = { id: 'global', language: 'vi', reducedMotion: 'system', performanceMode: false, backups: [], seeded: [] };
 
@@ -36,11 +37,11 @@ export async function findExistingImport(b: JourneyBundle): Promise<Journey | un
  */
 export async function importJourney(b: JourneyBundle, mode: 'add' | 'copy'): Promise<ImportResult> {
   if (mode === 'add') {
-    if (await findExistingImport(b)) throw new db.StorageError('Chuyến đi này đã có trên máy. Hãy mở nó, hoặc nhập thành bản sao.');
+    if (await findExistingImport(b)) throw new db.StorageError(t('Chuyến đi này đã có trên máy. Hãy mở nó, hoặc nhập thành bản sao.'));
     await db.putMany(bundleEntries(b));
     return { status: 'imported', journeyId: b.journey.id };
   }
-  const fresh = remapAsNew({ stores: { journeys: [b.journey], days: b.days, activities: b.activities, places: b.places, docs: b.docs, expenses: b.expenses, poses: b.poses, checklist: b.checklist }, blobs: new Map() }, ' (bản sao)');
+  const fresh = remapAsNew({ stores: { journeys: [b.journey], days: b.days, activities: b.activities, places: b.places, docs: b.docs, expenses: b.expenses, poses: b.poses, checklist: b.checklist }, blobs: new Map() }, t(' (bản sao)'));
   const entries: { store: StoreName; value: unknown }[] = [];
   for (const [store, rows] of Object.entries(fresh.stores)) for (const value of rows ?? []) entries.push({ store: store as StoreName, value });
   await db.putMany(entries);
@@ -57,15 +58,15 @@ export interface NewJourneyInput {
 
 export async function createJourney(input: NewJourneyInput): Promise<Journey> {
   const id = uid('j');
-  const t = nowIso();
+  const now = nowIso();
   const j: Journey = {
-    id, title: input.title.trim() || 'Chuyến đi mới', destinations: input.destinations, startDate: input.startDate, endDate: input.endDate,
+    id, title: input.title.trim() || t('Chuyến đi mới'), destinations: input.destinations, startDate: input.startDate, endDate: input.endDate,
     timeZone: input.timeZone, currency: input.currency, notes: input.notes, coverEmoji: input.coverEmoji || '📖', pinned: false, archived: false,
-    createdAt: t, updatedAt: t, settings: defaultJourneySettings(input.theme),
+    createdAt: now, updatedAt: now, settings: defaultJourneySettings(input.theme),
   };
   const n = Math.max(1, Math.min(60, daysBetween(input.startDate, input.endDate) + 1));
   const days: Day[] = Array.from({ length: n }, (_, i) => ({
-    id: uid('d'), journeyId: id, index: i + 1, date: addDays(input.startDate, i), title: `Ngày ${i + 1}`, subtitle: weekdayVi(addDays(input.startDate, i)), freeDay: false, privateByDefault: false, notes: '',
+    id: uid('d'), journeyId: id, index: i + 1, date: addDays(input.startDate, i), title: t('Ngày {0}', i + 1), subtitle: weekdayVi(addDays(input.startDate, i)), freeDay: false, privateByDefault: false, notes: '',
   }));
   const entries: { store: StoreName; value: unknown }[] = [{ store: 'journeys', value: j }, ...days.map((value) => ({ store: 'days' as const, value }))];
 
@@ -92,7 +93,7 @@ export async function createJourney(input: NewJourneyInput): Promise<Journey> {
 
 export async function updateJourney(id: string, patch: Partial<Journey>): Promise<void> {
   const j = await db.get<Journey>('journeys', id);
-  if (!j) throw new db.StorageError('Không tìm thấy chuyến đi.');
+  if (!j) throw new db.StorageError(t('Không tìm thấy chuyến đi.'));
   await db.put('journeys', { ...j, ...patch, id, updatedAt: nowIso() });
 }
 export async function updateJourneySettings(id: string, patch: Partial<JourneySettings>): Promise<void> {
@@ -136,7 +137,7 @@ export async function deleteActivity(a: Activity): Promise<void> {
 }
 
 export async function saveFileAsBlob(file: Blob, name: string, journeyId?: string): Promise<BlobRecord> {
-  if (!file.size) throw new db.StorageError('Tệp trống — không thể lưu.');
+  if (!file.size) throw new db.StorageError(t('Tệp trống — không thể lưu.'));
   // Store as ArrayBuffer: Safari has historically had bugs persisting Blob objects in IndexedDB.
   const data = await file.arrayBuffer();
   const rec: BlobRecord = { id: uid('b'), journeyId, mime: file.type || guessMime(name), name, size: file.size, data, createdAt: nowIso() };

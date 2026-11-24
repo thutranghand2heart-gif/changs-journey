@@ -431,3 +431,20 @@ button.glass-card { cursor: pointer; text-align: left; }
 /* Sheets/viewers live inside the journey stacking context: hide the tab bar while one is open so it never covers actions. */
 body.no-scroll .tabbar { display: none; }
 .sheet-body { padding-bottom: calc(32px + var(--safe-b)); }
+
+/* update notice (v1.0.1) */
+.update-banner { position: fixed; z-index: 9000; left: 50%; transform: translateX(-50%); top: calc(var(--safe-t) + 8px); width: min(560px, calc(100vw - 24px)); display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-radius: 16px; background: rgba(16, 59, 49, 0.96); border: 1px solid var(--gold); box-shadow: var(--shadow); font-size: 0.9rem; color: var(--cream); }
+.update-banner span { flex: 1; }
+.version-tag { font-size: 0.75rem; color: var(--muted); text-align: center; }
+.lang-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.06); color: var(--text); cursor: pointer; font-size: 0.85rem; white-space: nowrap; }
+.lang-btn.glass { background: rgba(10, 35, 28, 0.45); border-color: rgba(213, 180, 119, 0.35); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+
+/* v1.0.1 Wallet records & attachments — same frosted-glass language as the rest of the app */
+.doc-card { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.doc-main { flex: 1 1 220px; display: flex; align-items: center; gap: 12px; min-width: 0; min-height: 56px; padding: 0; border: none; background: none; color: inherit; text-align: left; cursor: pointer; font: inherit; }
+.doc-main b { display: block; }
+.doc-card > .btn { margin-left: 52px; }
+.att-row { display: flex; align-items: center; gap: 4px; padding: 6px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.att-main { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 48px; padding: 0; border: none; background: none; color: inherit; cursor: pointer; font: inherit; }
+.update-banner { top: auto; bottom: calc(var(--safe-b) + var(--tabbar-h) + 22px); }
+.travel-doc .btn { color: var(--emerald); border-color: rgba(16, 59, 49, 0.35); background: rgba(16, 59, 49, 0.06); }

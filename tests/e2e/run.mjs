@@ -71,16 +71,15 @@ await step('I5 re-importing the same file never duplicates or overwrites; copy i
 });
 await step('I6 offline: app shell + imported journey + imported ticket work without network', async () => {
   await go(`#/j/${journeyId}/wallet`);
-  await pick(() => page.getByRole('button', { name: /Thêm vé \/ ảnh \/ PDF/ }).click(), 'tests/fixtures/ticket.png');
-  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Thêm giấy tờ' }).first().click();
+  await pick(() => page.getByRole('button', { name: /Lưu thành giấy tờ độc lập/ }).click(), 'tests/fixtures/ticket.png');
   assert(await page.evaluate(async () => !!(await navigator.serviceWorker.ready).active), 'service worker active');
   await page.reload();
   await page.waitForTimeout(800);
   await ctx.setOffline(true);
   await page.reload();
-  await page.getByText('ticket', { exact: true }).waitFor({ timeout: 6000 });
-  await page.getByText('ticket', { exact: true }).click();
-  await page.getByRole('button', { name: /Mở toàn màn hình/ }).click();
+  await page.locator('.doc-card', { hasText: 'ticket' }).locator('.doc-main').click({ timeout: 6000 });
+  await page.locator('.att-main').first().click();
   await page.waitForFunction(() => document.querySelector('.viewer img')?.naturalWidth > 0, null, { timeout: 5000 });
   await page.getByRole('button', { name: 'Đóng trình xem' }).click();
   await page.keyboard.press('Escape');

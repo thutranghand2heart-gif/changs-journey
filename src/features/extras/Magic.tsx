@@ -5,14 +5,15 @@ import { useApp } from '../../ui/app-context';
 import { Snow } from '../../art/Snow';
 import { todayIn } from '../../lib/time';
 import { updateJourneySettings } from '../../db/repo';
+import { t, tr } from '../../lib/i18n';
 
 const DEFAULT_ADVENT = [
-  'Một tách trà nóng là khởi đầu của mọi câu chuyện.', 'Viết ra ba điều bạn mong chờ ở chuyến đi.', 'Chọn một chiếc khăn quàng thật ấm.', 'Tập nói: 圣诞快乐 — Shèngdàn kuàilè!',
-  'Sạc đầy pin máy ảnh và dọn chỗ trong bộ nhớ.', 'Nghe một bản nhạc khiến bạn thấy bình yên.', 'Lưu địa chỉ nơi ở bằng tiếng địa phương.', 'Chọn trang phục cho những bức ảnh đẹp nhất.',
-  'Viết một lá thư nhỏ gửi chính mình của năm sau.', 'Tưởng tượng thành phố lúc lên đèn.', 'Tập nói: 谢谢 — Xièxie.', 'Kiểm tra hộ chiếu và giấy tờ.',
-  'Mỗi bước chân đều có một câu chuyện.', 'Thêm vé thật vào Ví và mở thử một lần.', 'Chuẩn bị một món quà nhỏ cho chính mình.', 'Kiểm tra lại các vé cần đặt trước.',
-  'Tạo một bản sao lưu và cất vào Tệp.', 'Xếp vali thật gọn gàng.', 'Đêm nay ngủ sớm nhé.', 'Hello Christmas!',
-  'Một con phố đèn lồng đang chờ bạn.', 'Mùa đông thật dịu dàng.', 'Hôm nay, hãy ngước nhìn bầu trời.', 'Một ngày của riêng mình. 🕯️', 'Until we meet again. 🎄',
+  tr('Một tách trà nóng là khởi đầu của mọi câu chuyện.'), tr('Viết ra ba điều bạn mong chờ ở chuyến đi.'), tr('Chọn một chiếc khăn quàng thật ấm.'), tr('Tập nói: 圣诞快乐 — Shèngdàn kuàilè!'),
+  tr('Sạc đầy pin máy ảnh và dọn chỗ trong bộ nhớ.'), tr('Nghe một bản nhạc khiến bạn thấy bình yên.'), tr('Lưu địa chỉ nơi ở bằng tiếng địa phương.'), tr('Chọn trang phục cho những bức ảnh đẹp nhất.'),
+  tr('Viết một lá thư nhỏ gửi chính mình của năm sau.'), tr('Tưởng tượng thành phố lúc lên đèn.'), tr('Tập nói: 谢谢 — Xièxie.'), tr('Kiểm tra hộ chiếu và giấy tờ.'),
+  tr('Mỗi bước chân đều có một câu chuyện.'), tr('Thêm vé thật vào Ví và mở thử một lần.'), tr('Chuẩn bị một món quà nhỏ cho chính mình.'), tr('Kiểm tra lại các vé cần đặt trước.'),
+  tr('Tạo một bản sao lưu và cất vào Tệp.'), tr('Xếp vali thật gọn gàng.'), tr('Đêm nay ngủ sớm nhé.'), tr('Hello Christmas!'),
+  tr('Một con phố đèn lồng đang chờ bạn.'), tr('Mùa đông thật dịu dàng.'), tr('Hôm nay, hãy ngước nhìn bầu trời.'), tr('Một ngày của riêng mình. 🕯️'), tr('Until we meet again. 🎄'),
 ];
 
 export function MagicPage() {
@@ -33,21 +34,21 @@ export function MagicPage() {
   };
   return (
     <div className="page magic">
-      <PageHeader title="Phép màu Giáng sinh" back={`/j/${j.id}`} />
+      <PageHeader title={t('Phép màu Giáng sinh')} back={`/j/${j.id}`} />
       <section className="glass-card">
-        <h3 className="display">Lịch Advent</h3>
-        <p className="muted xsmall">Mỗi ô mở vào đúng ngày của tháng 12 (giờ {j.timeZone}).</p>
+        <h3 className="display">{t('Lịch Advent')}</h3>
+        <p className="muted xsmall">{t('Mỗi ô mở vào đúng ngày của tháng 12 (giờ')}{' '}{j.timeZone}).</p>
         <div className="advent">
           {Array.from({ length: 25 }, (_, i) => i + 1).map((n) => (
-            <button key={n} className={`advent-door ${opened.includes(n) ? 'open' : ''}`} disabled={!canOpen(n)} onClick={() => open(n)} aria-label={`Ngày ${n}${canOpen(n) ? '' : ' (chưa đến ngày)'}`}>{n}</button>
+            <button key={n} className={`advent-door ${opened.includes(n) ? 'open' : ''}`} disabled={!canOpen(n)} onClick={() => open(n)} aria-label={t('Ngày {0}{1}', n, canOpen(n) ? '' : t(' (chưa đến ngày)'))}>{n}</button>
           ))}
         </div>
-        {door && <p className="advent-msg display">🎁 {door}/12 — {(j.adventMessages ?? DEFAULT_ADVENT)[door - 1] ?? DEFAULT_ADVENT[door - 1]}</p>}
+        {door && <p className="advent-msg display">🎁 {door}/12 — {j.adventMessages?.[door - 1] ?? t(DEFAULT_ADVENT[door - 1])}</p>}
       </section>
 
       <section className="glass-card">
-        <h3 className="display">Quả cầu tuyết {j.destinations[0] ?? ''}</h3>
-        <button className="snowglobe" onClick={() => setShake((s) => s + 1)} aria-label="Lắc quả cầu tuyết">
+        <h3 className="display">{t('Quả cầu tuyết')}{' '}{j.destinations[0] ?? ''}</h3>
+        <button className="snowglobe" onClick={() => setShake((s) => s + 1)} aria-label={t('Lắc quả cầu tuyết')}>
           <svg viewBox="0 0 200 220" aria-hidden="true">
             <defs>
               <radialGradient id="glass" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stopColor="#ffffff" stopOpacity="0.35" /><stop offset="1" stopColor="#bfe3ff" stopOpacity="0.08" /></radialGradient>
@@ -72,19 +73,19 @@ export function MagicPage() {
             <path d="M40 170 Q100 190 160 170 L170 210 L30 210 Z" fill="#8B1E2D" stroke="#D5B477" strokeOpacity="0.7" />
           </svg>
         </button>
-        <p className="muted xsmall center">Chạm để lắc.</p>
+        <p className="muted xsmall center">{t('Chạm để lắc.')}</p>
       </section>
 
       <section className="glass-card">
-        <h3 className="display">Xe tuần lộc</h3>
-        <button className="btn" onClick={() => setSleigh((s) => s + 1)} disabled={reduced}>Gọi ông già Noel bay qua 🦌</button>
-        {reduced && <p className="muted xsmall">Đã tắt vì đang giảm chuyển động.</p>}
+        <h3 className="display">{t('Xe tuần lộc')}</h3>
+        <button className="btn" onClick={() => setSleigh((s) => s + 1)} disabled={reduced}>{t('Gọi ông già Noel bay qua 🦌')}</button>
+        {reduced && <p className="muted xsmall">{t('Đã tắt vì đang giảm chuyển động.')}</p>}
       </section>
 
       <section className="glass-card">
-        <h3 className="display">Trang trí</h3>
-        <label className="toggle-row"><input type="checkbox" checked={j.settings.decorations} onChange={(e: any) => updateJourneySettings(j.id, { decorations: e.target.checked })} /> Tuyết, đèn và hạt vàng trên Home</label>
-        <button className="link-btn" onClick={() => go(`/j/${j.id}/appearance`)}>Thêm tùy chọn giao diện →</button>
+        <h3 className="display">{t('Trang trí')}</h3>
+        <label className="toggle-row"><input type="checkbox" checked={j.settings.decorations} onChange={(e: any) => updateJourneySettings(j.id, { decorations: e.target.checked })} /> {' '}{t('Tuyết, đèn và hạt vàng trên Home')}</label>
+        <button className="link-btn" onClick={() => go(`/j/${j.id}/appearance`)}>{t('Thêm tùy chọn giao diện →')}</button>
       </section>
 
       {sleigh > 0 && !reduced && (

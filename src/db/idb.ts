@@ -1,4 +1,6 @@
-import { SCHEMA_VERSION, STORES, type StoreName } from './schema';
+import { SCHEMA_VERSION, STORES, type Journey, type StoreName, type WalletDoc } from './schema';
+import { linkHotelV2, migrateDocV2 } from './migrate';
+import { t } from '../lib/i18n';
 
 const DB_NAME = 'chang-journeys';
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -16,7 +18,7 @@ function req<T>(r: IDBRequest<T>): Promise<T> {
 export function openDb(): Promise<IDBDatabase> {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
-    if (typeof indexedDB === 'undefined') return reject(new StorageError('IndexedDB không khả dụng trên trình duyệt này.'));
+    if (typeof indexedDB === 'undefined') return reject(new StorageError(t('IndexedDB không khả dụng trên trình duyệt này.')));
     const r = indexedDB.open(DB_NAME, SCHEMA_VERSION);
     r.onupgradeneeded = (ev) => {
       const db = r.result;
@@ -30,11 +32,44 @@ export function openDb(): Promise<IDBDatabase> {
           if (s !== 'settings' && s !== 'weather' && s !== 'world') os.createIndex('journeyId', 'journeyId');
         }
       }
-      // future: if (old < 2) { ... }
+      // v1 -> v2 (app 1.0.1): attachments store + canonical booking records. Runs inside the upgrade
+      // transaction, so it either completes fully or not at all. Never deletes or copies file bytes.
+      if (old >= 1 && old < 2) {
+        try { localStorage.setItem('chang-db-upgraded-from', String(old)); } catch { /* storage unavailable */ }
+        if (!db.objectStoreNames.contains('attachments')) db.createObjectStore('attachments', { keyPath: 'id' }).createIndex('journeyId', 'journeyId');
+        const tx = r.transaction!;
+        const docsOs = tx.objectStore('docs');
+        const attOs = tx.objectStore('attachments');
+        const jOs = tx.objectStore('journeys');
+        const all = docsOs.getAll();
+        all.onsuccess = () => {
+          const docs = (all.result as WalletDoc[]).map((d) => {
+            const m = migrateDocV2(d);
+            if (m.attachment) attOs.put(m.attachment);
+            if (m.doc !== d) docsOs.put(m.doc);
+            return m.doc;
+          });
+          const js = jOs.getAll();
+          js.onsuccess = () => {
+            for (const j of js.result as Journey[]) {
+              const h = linkHotelV2(j, docs);
+              if (h.journey) jOs.put(h.journey);
+              if (h.doc) docsOs.put(h.doc);
+            }
+          };
+        };
+      }
     };
-    r.onsuccess = () => resolve(r.result);
+    r.onsuccess = () => {
+      const conn = r.result;
+      conn.onversionchange = () => {
+        conn.close();
+        location.reload();
+      };
+      resolve(conn);
+    };
     r.onerror = () => reject(new StorageError(String(r.error?.message || r.error)));
-    r.onblocked = () => reject(new StorageError('Cơ sở dữ liệu đang bị khóa bởi một tab khác.'));
+    r.onblocked = () => reject(new StorageError(t('Cơ sở dữ liệu đang bị khóa bởi một tab khác.')));
   });
   return dbPromise;
 }
@@ -110,7 +145,7 @@ function txDone(tx: IDBTransaction): Promise<void> {
 }
 
 function humanize(e: DOMException | null): string {
-  if (!e) return 'Lỗi lưu trữ không xác định.';
-  if (e.name === 'QuotaExceededError') return 'Bộ nhớ trình duyệt đã đầy. Hãy sao lưu và xóa bớt ảnh/tệp lớn.';
+  if (!e) return t('Lỗi lưu trữ không xác định.');
+  if (e.name === 'QuotaExceededError') return t('Bộ nhớ trình duyệt đã đầy. Hãy sao lưu và xóa bớt ảnh/tệp lớn.');
   return `${e.name}: ${e.message}`;
 }

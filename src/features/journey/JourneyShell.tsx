@@ -31,13 +31,13 @@ export const TABS = [
 
 export function JourneyShell({ id, tab, children }: { id: string; tab: string; children: (d: JourneyData) => ReactNode }) {
   const [data, loaded, err] = useLive(() => load(id), [id], null as JourneyData | null);
-  if (!loaded) return <div className="page center muted">Đang mở nhật ký…</div>;
-  if (err) return <div className="page"><p className="error">Lỗi bộ nhớ: {err}</p></div>;
+  if (!loaded) return <div className="page center muted">{t('Đang mở nhật ký…')}</div>;
+  if (err) return <div className="page"><p className="error">{t('Lỗi bộ nhớ:')}{' '}{err}</p></div>;
   if (!data)
     return (
       <div className="page center">
-        <p>Không tìm thấy chuyến đi này.</p>
-        <button className="btn" onClick={() => go('/')}>Về danh sách</button>
+        <p>{t('Không tìm thấy chuyến đi này.')}</p>
+        <button className="btn" onClick={() => go('/')}>{t('Về danh sách')}</button>
       </div>
     );
   const tk = tokensFor(data.journey);
@@ -62,7 +62,7 @@ export function JourneyShell({ id, tab, children }: { id: string; tab: string; c
 
 function TabBar({ id, tab }: { id: string; tab: string }) {
   return (
-    <nav className="tabbar" aria-label="Điều hướng chuyến đi">
+    <nav className="tabbar" aria-label={t('Điều hướng chuyến đi')}>
       {TABS.map((x) => {
         const Icon = x.icon;
         const on = tab === x.key;

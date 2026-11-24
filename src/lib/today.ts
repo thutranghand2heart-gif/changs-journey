@@ -1,5 +1,6 @@
 import type { Activity, Day, Journey, WalletDoc } from '../db/schema';
 import { daysBetween, timeIn, todayIn } from './time';
+import { t } from './i18n';
 
 export interface TodayInfo {
   phase: 'before' | 'during' | 'after';
@@ -23,11 +24,11 @@ export function smartToday(j: Journey, days: Day[], acts: Activity[], docs: Wall
 
   if (phase === 'before') {
     const flightDocs = docs.filter((d) => d.category === 'flight');
-    if (flightDocs.length && flightDocs.every((d) => !d.blobId)) info.reminders.push({ text: 'Chưa có vé/QR chuyến bay thật trong Ví — hãy thêm bản gốc.', link: `${base}/wallet` });
+    if (flightDocs.length && flightDocs.every((d) => !(d.attachmentIds ?? []).length && !d.blobId)) info.reminders.push({ text: t('Chưa có vé/QR chuyến bay thật trong Ví — hãy thêm bản gốc.'), link: `${base}/wallet` });
     const pending = docs.filter((d) => d.bookingStatus === 'payment-pending' || d.bookingStatus === 'reservation-requested');
-    for (const d of pending) info.reminders.push({ text: `Đang chờ: ${d.title} (${d.bookingStatus === 'payment-pending' ? 'chờ thanh toán' : 'đã gửi yêu cầu'})`, link: `${base}/wallet` });
-    for (const d of days) if (!d.freeDay && d.remindFrom && d.notes && localDate >= d.remindFrom) info.reminders.push({ text: `Ngày ${d.index}: ${d.notes}`, link: `${base}/journey/${d.id}` });
-    if (info.daysUntil <= 14) info.reminders.push({ text: 'Trước khi đi: chạy Kiểm tra sẵn sàng offline và tạo bản sao lưu.', link: '/offline' });
+    for (const d of pending) info.reminders.push({ text: t('Đang chờ: {0} ({1})', d.title, d.bookingStatus === 'payment-pending' ? t('chờ thanh toán') : t('đã gửi yêu cầu')), link: `${base}/wallet` });
+    for (const d of days) if (!d.freeDay && d.remindFrom && d.notes && localDate >= d.remindFrom) info.reminders.push({ text: t('Ngày {0}: {1}', d.index, d.notes), link: `${base}/journey/${d.id}` });
+    if (info.daysUntil <= 14) info.reminders.push({ text: t('Trước khi đi: chạy Kiểm tra sẵn sàng offline và tạo bản sao lưu.'), link: '/offline' });
   }
 
   if (phase === 'during' && day && !day.freeDay) {
@@ -37,8 +38,8 @@ export function smartToday(j: Journey, days: Day[], acts: Activity[], docs: Wall
     const isLast = day.date === j.endDate;
     if (isLast) {
       for (const a of todays.filter((x) => x.kind === 'flight' || x.kind === 'hotel' || x.kind === 'transport'))
-        info.reminders.push({ text: `${a.start ?? ''} ${a.title}${a.timeZoneLabel ? ` (${a.timeZoneLabel})` : ''}`.trim(), link: `${base}/journey/${day.id}?a=${a.id}`, priority: true });
-      info.reminders.push({ text: 'Mở sẵn vé máy bay trong Ví', link: `${base}/wallet`, priority: true });
+        info.reminders.push({ text: `${a.start ?? ''} ${a.title}${a.timeZoneLabel ? ` (${t(a.timeZoneLabel)})` : ''}`.trim(), link: `${base}/journey/${day.id}?a=${a.id}`, priority: true });
+      info.reminders.push({ text: t('Mở sẵn vé máy bay trong Ví'), link: `${base}/wallet`, priority: true });
     }
   }
   // Free day: deliberately no upcoming items and no reminders.

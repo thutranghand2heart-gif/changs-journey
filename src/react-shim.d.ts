@@ -38,3 +38,5 @@ declare module 'jszip' {
   export default JSZip;
 }
 declare module '*.css';
+
+declare const __APP_VERSION__: string;

@@ -4,6 +4,7 @@ import JSZip from 'jszip';
 import { BACKUP_FORMAT, BACKUP_FORMAT_VERSION, SCHEMA_VERSION, STORES, type BlobRecord, type StoreName } from '../db/schema';
 import { isSealed, openSealed, sealBackup, sha256Hex } from './crypto';
 import { uid } from './util';
+import { t } from './i18n';
 
 export type Records = Partial<Record<StoreName, any[]>>;
 export interface Dataset { stores: Records; blobs: Map<string, Uint8Array> }
@@ -44,8 +45,8 @@ export async function buildBackupZip(data: Dataset, createdAt: string): Promise<
     counts: Object.fromEntries(STORES.filter((s) => !['journeys', 'settings', 'world'].includes(s)).map((s) => [s, (data.stores[s] ?? []).filter((r: any) => r.journeyId === j.id).length])),
   }));
   const manifest: Manifest = {
-    format: BACKUP_FORMAT, formatVersion: BACKUP_FORMAT_VERSION, schemaVersion: SCHEMA_VERSION, createdAt, app: 'Những bước chân của Chang', journeys, files,
-    note: 'Nội dung riêng tư nằm trong bản sao lưu ở dạng đã mã hóa; cần mật khẩu Két để đọc.',
+    format: BACKUP_FORMAT, formatVersion: BACKUP_FORMAT_VERSION, schemaVersion: SCHEMA_VERSION, createdAt, app: t('Những bước chân của Chang'), journeys, files,
+    note: t('Nội dung riêng tư nằm trong bản sao lưu ở dạng đã mã hóa; cần mật khẩu Két để đọc.'),
   };
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
   const bytes: Uint8Array = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE', compressionOptions: { level: 6 } });
@@ -67,39 +68,39 @@ export async function parseBackup(raw: Uint8Array, passphrase?: string): Promise
     try {
       bytes = await openSealed(passphrase, raw);
     } catch {
-      throw new BackupError('Sai mật khẩu sao lưu hoặc tệp bị hỏng.');
+      throw new BackupError(t('Sai mật khẩu sao lưu hoặc tệp bị hỏng.'));
     }
   }
   let zip: any;
   try {
     zip = await JSZip.loadAsync(bytes);
   } catch {
-    throw new BackupError('Tệp không phải bản sao lưu hợp lệ.');
+    throw new BackupError(t('Tệp không phải bản sao lưu hợp lệ.'));
   }
   const mf = zip.file('manifest.json');
-  if (!mf) throw new BackupError('Thiếu manifest.json.');
+  if (!mf) throw new BackupError(t('Thiếu manifest.json.'));
   const manifest = JSON.parse(await mf.async('string')) as Manifest;
-  if (manifest.format !== BACKUP_FORMAT) throw new BackupError('Định dạng sao lưu không đúng.');
-  if (manifest.formatVersion > BACKUP_FORMAT_VERSION) throw new BackupError('Bản sao lưu được tạo bởi phiên bản ứng dụng mới hơn.');
+  if (manifest.format !== BACKUP_FORMAT) throw new BackupError(t('Định dạng sao lưu không đúng.'));
+  if (manifest.formatVersion > BACKUP_FORMAT_VERSION) throw new BackupError(t('Bản sao lưu được tạo bởi phiên bản ứng dụng mới hơn.'));
   const problems: string[] = [];
   const dataFile = zip.file('data.json');
-  if (!dataFile) throw new BackupError('Thiếu data.json.');
+  if (!dataFile) throw new BackupError(t('Thiếu data.json.'));
   const dataBytes: Uint8Array = await dataFile.async('uint8array');
-  if ((await sha256Hex(dataBytes)) !== manifest.files['data.json']) problems.push('data.json: mã kiểm tra không khớp');
+  if ((await sha256Hex(dataBytes)) !== manifest.files['data.json']) problems.push(t('data.json: mã kiểm tra không khớp'));
   const stores = JSON.parse(new TextDecoder().decode(dataBytes)) as Records;
   const blobs = new Map<string, Uint8Array>();
   for (const [path, hash] of Object.entries(manifest.files)) {
     if (!path.startsWith('blobs/')) continue;
     const f = zip.file(path);
     if (!f) {
-      problems.push(`${path}: thiếu`);
+      problems.push(t('{0}: thiếu', path));
       continue;
     }
     const b: Uint8Array = await f.async('uint8array');
-    if ((await sha256Hex(b)) !== hash) problems.push(`${path}: mã kiểm tra không khớp`);
+    if ((await sha256Hex(b)) !== hash) problems.push(t('{0}: mã kiểm tra không khớp', path));
     blobs.set(path.slice(6, -4), b);
   }
-  for (const r of stores.blobs ?? []) if (!blobs.has(r.id)) problems.push(`Tệp đính kèm ${r.name ?? r.id} không có dữ liệu`);
+  for (const r of stores.blobs ?? []) if (!blobs.has(r.id)) problems.push(t('Tệp đính kèm {0} không có dữ liệu', r.name ?? r.id));
   return { manifest, data: { stores, blobs }, integrityOk: problems.length === 0, problems };
 }
 
@@ -115,7 +116,7 @@ export function sliceJourney(data: Dataset, journeyId: string): Dataset {
 }
 
 /** Give every record (and blob) of a journey slice new ids, rewriting references, so it can be added as a NEW journey. */
-export function remapAsNew(slice: Dataset, titleSuffix = ' (khôi phục)'): Dataset {
+export function remapAsNew(slice: Dataset, titleSuffix = t(' (khôi phục)')): Dataset {
   const map = new Map<string, string>();
   for (const s of STORES) for (const r of slice.stores[s] ?? []) if (r && typeof r.id === 'string') map.set(r.id, uid(s.slice(0, 2)));
   // weather is keyed by journeyId

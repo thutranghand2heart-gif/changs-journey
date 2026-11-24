@@ -1,3 +1,5 @@
+
+import { t } from '../lib/i18n';
 // Original, procedurally synthesized ambience (soft music-box bells over a warm pad).
 // No recorded or copyrighted music. Off by default; starts only from a user tap.
 
@@ -56,7 +58,7 @@ function pad(t: number) {
 export async function startAmbience() {
   if (playing) return;
   const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
-  if (!AC) throw new Error('Trình duyệt không hỗ trợ âm thanh Web Audio.');
+  if (!AC) throw new Error(t('Trình duyệt không hỗ trợ âm thanh Web Audio.'));
   ctx = ctx ?? new AC();
   await ctx!.resume();
   master = ctx!.createGain();

@@ -2,7 +2,7 @@
 // and belongs to exactly one store. Views (Wallet, Budget, Food, Map…) reference
 // ids instead of copying records.
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2; // v2 (app 1.0.1): attachments store, canonical booking records
 export const BACKUP_FORMAT = 'chang-journey-backup';
 export const BACKUP_FORMAT_VERSION = 1;
 export const IMPORT_FORMAT = 'chang-journey-import';
@@ -72,6 +72,11 @@ export interface Journey {
   postcardDefault?: string;
   settings: JourneySettings;
   hotel?: { name: string; addressZh?: string; addressEn?: string; note?: string; verified: boolean };
+  /** v2: canonical hotel booking record in Wallet. When set, it is the source of truth for hotel info. */
+  hotelDocId?: ID;
+  travelCard?: TravelCardSettings;
+  /** Optional translations of record text, supplied by the user/import file. Never machine-generated. */
+  i18n?: LocalizedText;
 }
 
 export interface Day {
@@ -85,6 +90,7 @@ export interface Day {
   privateByDefault: boolean;
   notes: string;
   remindFrom?: string; // YYYY-MM-DD: show this day's note as an in-app reminder from this date until the trip starts
+  i18n?: LocalizedText;
 }
 
 export interface Activity {
@@ -102,6 +108,7 @@ export interface Activity {
   nameZh?: string;
   pinyin?: string;
   descriptionVi?: string;
+  i18n?: LocalizedText;
   notes: string;
   status: ActivityStatus;
   optional?: boolean;
@@ -139,7 +146,8 @@ export interface WalletDoc {
   dayId?: ID;
   activityIds: ID[];
   details: string; // booking reference etc — user-entered only
-  blobId?: ID; // original file
+  /** v1 only: single original file. Migrated to an Attachment in schema v2 (kept for safety, no longer read). */
+  blobId?: ID;
   mime?: string;
   fileName?: string;
   size?: number;
@@ -147,6 +155,62 @@ export interface WalletDoc {
   encrypted?: boolean;
   createdAt: string;
   lastOpenedOkAt?: string; // set only after the blob was actually read and rendered
+  // ── v2 ──
+  /** 'booking' = one canonical record per flight segment / hotel stay / train / reservation; 'document' = standalone file holder */
+  recordType?: 'booking' | 'document';
+  /** Attachments linked to this record. One attachment may be linked from several records (no file duplication). */
+  attachmentIds?: ID[];
+  paymentStatus?: PaymentStatus;
+  flight?: FlightInfo;
+  hotel?: HotelInfo;
+}
+
+export type PaymentStatus = 'unknown' | 'not-required' | 'pending' | 'partially-paid' | 'paid' | 'refunded';
+
+export interface FlightInfo {
+  direction?: 'outbound' | 'return' | 'other';
+  airline?: string;
+  flightNumber?: string;
+  depAirport?: string;
+  arrAirport?: string;
+  depTerminal?: string;
+  arrTerminal?: string;
+  depDate?: string; // YYYY-MM-DD local
+  depTime?: string; // HH:mm local
+  depTz?: string;
+  arrDate?: string;
+  arrTime?: string;
+  arrTz?: string;
+  passenger?: string;
+  bookingRef?: string; // sensitive: excluded from shared/printed card by default
+  seat?: string;
+  baggage?: string;
+}
+
+export interface HotelInfo { name?: string; addressZh?: string; addressEn?: string; phone?: string; checkIn?: string; checkOut?: string; bookingRef?: string }
+
+export type AttachmentKind = 'eticket' | 'confirmation' | 'boarding-pass' | 'qr' | 'photo' | 'screenshot' | 'receipt' | 'other';
+/** One stored file (bytes live in 'blobs'); linked from any number of WalletDoc records via attachmentIds. */
+export interface Attachment {
+  id: ID;
+  journeyId: ID;
+  blobId: ID;
+  kind: AttachmentKind;
+  label: string; // user-editable display name
+  fileName: string;
+  mime: string;
+  size: number;
+  createdAt: string;
+  lastOpenedOkAt?: string;
+}
+
+/** Which canonical records the travel information card shows. */
+export interface TravelCardSettings {
+  outboundId?: ID;
+  returnId?: ID;
+  hotelId?: ID;
+  purpose: 'tourism' | 'business' | 'family' | 'other';
+  show: { airportTimes: boolean; airline: boolean; hotelContact: boolean; itinerary: boolean; documents: boolean; bookingRefs: boolean };
 }
 
 export type ExpenseCategory = 'transport' | 'food' | 'hotel' | 'tickets' | 'photo' | 'shopping' | 'gifts' | 'other';
@@ -248,6 +312,10 @@ export interface BackupLog { id: ID; createdAt: string; fileName: string; sha256
 
 export const STORES = [
   'journeys', 'days', 'activities', 'places', 'docs', 'expenses', 'memories', 'food', 'poses',
-  'checklist', 'capsules', 'postcards', 'blobs', 'world', 'weather', 'settings',
+  'checklist', 'capsules', 'postcards', 'blobs', 'world', 'weather', 'settings', 'attachments',
 ] as const;
+
+export type UiLang = 'vi' | 'zh' | 'en' | 'ko';
+/** Per-language overrides for a record's title / description. Missing → the original field is shown. */
+export type LocalizedText = Partial<Record<UiLang, { title?: string; subtitle?: string; description?: string }>>;
 export type StoreName = (typeof STORES)[number];

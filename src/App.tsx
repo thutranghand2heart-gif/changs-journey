@@ -3,9 +3,10 @@ import { getSettings, DEFAULT_SETTINGS } from './db/repo';
 import { onChange } from './db/idb';
 import type { GlobalSettings, Journey } from './db/schema';
 import { AppCtx } from './ui/app-context';
+import { UpdateNotice } from './ui/UpdateNotice';
 import { go, ToastHost, useLive, useRoute } from './ui/core';
 import * as db from './db/idb';
-import { setLang } from './lib/i18n';
+import { setLang, t } from './lib/i18n';
 import { prefersReducedMotion } from './lib/util';
 import { GlobalHome } from './features/global/GlobalHome';
 import { JourneyCreator } from './features/global/JourneyCreator';
@@ -59,16 +60,17 @@ export function App() {
   if (fatal)
     return (
       <div className="page theme-global">
-        <h1>Không mở được bộ nhớ</h1>
+        <h1>{t('Không mở được bộ nhớ')}</h1>
         <p className="error">{fatal}</p>
-        <p>Ứng dụng cần IndexedDB. Trên iPhone, chế độ Duyệt web riêng tư có thể chặn bộ nhớ — hãy mở trong tab thường hoặc từ Màn hình chính.</p>
+        <p>{t('Ứng dụng cần IndexedDB. Trên iPhone, chế độ Duyệt web riêng tư có thể chặn bộ nhớ — hãy mở trong tab thường hoặc từ Màn hình chính.')}</p>
       </div>
     );
   if (!ready) return <div className="boot" aria-busy="true" />;
   return (
     <AppCtx.Provider value={{ settings, reduced }}>
       <ToastHost>
-        <Router />
+        <UpdateNotice />
+        <Router key={settings.language} />
       </ToastHost>
     </AppCtx.Provider>
   );

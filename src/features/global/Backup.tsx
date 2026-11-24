@@ -7,6 +7,7 @@ import { BackupError, packBackup, parseBackup, type ParsedBackup } from '../../l
 import { collectAll, restoreAsNew, restoreFull, restoreSelective } from '../../lib/backupIo';
 import { sha256Hex, isSealed } from '../../lib/crypto';
 import { bytes, downloadBlob, nowIso, uid } from '../../lib/util';
+import { locale, t } from '../../lib/i18n';
 
 export function BackupPage() {
   const { settings } = useApp();
@@ -30,7 +31,7 @@ export function BackupPage() {
   };
 
   const create = async () => {
-    setBusy('Đang tạo bản sao lưu…');
+    setBusy(t('Đang tạo bản sao lưu…'));
     try {
       const data = await collectAll();
       const createdAt = nowIso();
@@ -40,9 +41,9 @@ export function BackupPage() {
       const s = await getSettings();
       await saveSettings({ backups: [log, ...s.backups].slice(0, 20) });
       setCreated({ bytes: out, log });
-      toast('Đã TẠO bản sao lưu (chưa lưu ra ngoài)');
+      toast(t('Đã TẠO bản sao lưu (chưa lưu ra ngoài)'));
     } catch (e: any) {
-      toast(e.message ?? 'Lỗi tạo bản sao lưu', 'err');
+      toast(e.message ?? t('Lỗi tạo bản sao lưu'), 'err');
     } finally {
       setBusy('');
       setPass('');
@@ -56,9 +57,9 @@ export function BackupPage() {
     const file = new File([blob], created.log.fileName, { type: 'application/octet-stream' });
     if ((navigator as any).canShare?.({ files: [file] })) {
       try {
-        await navigator.share({ files: [file], title: 'Bản sao lưu Chang' });
+        await navigator.share({ files: [file], title: t('Bản sao lưu Chang') });
       } catch {
-        return toast('Đã hủy chia sẻ', 'warn');
+        return toast(t('Đã hủy chia sẻ'), 'warn');
       }
     } else downloadBlob(blob, created.log.fileName);
     setAskSaved(true);
@@ -75,14 +76,14 @@ export function BackupPage() {
         if (isSealed(raw)) {
           setNeedPass(raw);
           setRestore(null);
-          if (!log) toast('Tệp không khớp bản sao lưu nào đã tạo trên máy này — vẫn có thể kiểm tra nội dung', 'warn');
+          if (!log) toast(t('Tệp không khớp bản sao lưu nào đã tạo trên máy này — vẫn có thể kiểm tra nội dung'), 'warn');
           return;
         }
         const parsed = await parseBackup(raw);
         if (log && parsed.integrityOk) {
           await updateLog(log.id, { verified: nowIso(), saved: log.saved ?? nowIso() });
-          toast('ĐÃ XÁC MINH: tệp đã lưu khớp và đọc được đầy đủ');
-        } else toast(parsed.integrityOk ? 'Tệp đọc được nhưng không khớp nhật ký trên máy này' : `Lỗi toàn vẹn: ${parsed.problems.length} vấn đề`, parsed.integrityOk ? 'warn' : 'err');
+          toast(t('ĐÃ XÁC MINH: tệp đã lưu khớp và đọc được đầy đủ'));
+        } else toast(parsed.integrityOk ? t('Tệp đọc được nhưng không khớp nhật ký trên máy này') : t('Lỗi toàn vẹn: {0} vấn đề', parsed.problems.length), parsed.integrityOk ? 'warn' : 'err');
         setRestore({ parsed, hash });
       } catch (e: any) {
         toast(e.message, 'err');
@@ -99,19 +100,19 @@ export function BackupPage() {
 
   const unlockFile = async () => {
     if (!needPass) return;
-    setBusy('Đang giải mã…');
+    setBusy(t('Đang giải mã…'));
     try {
       const parsed = await parseBackup(needPass, rPass);
       const hash = await sha256Hex(needPass);
       const log = settings.backups.find((b) => b.sha256 === hash);
       if (log && parsed.integrityOk) {
         await updateLog(log.id, { verified: nowIso(), saved: log.saved ?? nowIso() });
-        toast('ĐÃ XÁC MINH bản sao lưu đã mã hóa');
+        toast(t('ĐÃ XÁC MINH bản sao lưu đã mã hóa'));
       }
       setRestore({ parsed, hash });
       setNeedPass(null);
     } catch (e: any) {
-      toast(e instanceof BackupError ? e.message : 'Không mở được tệp', 'err');
+      toast(e instanceof BackupError ? e.message : t('Không mở được tệp'), 'err');
     } finally {
       setBusy('');
       setRPass('');
@@ -121,87 +122,87 @@ export function BackupPage() {
   const p = restore?.parsed;
   return (
     <div className="page theme-global">
-      <PageHeader title="Trung tâm bảo vệ kỷ niệm" sub="Sao lưu · xác minh · khôi phục" back={back} />
+      <PageHeader title={t('Trung tâm bảo vệ kỷ niệm')} sub={t('Sao lưu · xác minh · khôi phục')} back={back} />
       <div className="card small">
-        <p>Dữ liệu chỉ nằm trong bộ nhớ trình duyệt của iPhone. Nó <b>có thể mất</b> khi bạn xóa ứng dụng khỏi Màn hình chính, xóa dữ liệu Safari, đổi máy hoặc khi iOS dọn bộ nhớ. Hãy lưu bản sao lưu vào Tệp / iCloud Drive.</p>
+        <p>{t('Dữ liệu chỉ nằm trong bộ nhớ trình duyệt của iPhone. Nó')}{' '}<b>{t('có thể mất')}</b> {' '}{t('khi bạn xóa ứng dụng khỏi Màn hình chính, xóa dữ liệu Safari, đổi máy hoặc khi iOS dọn bộ nhớ. Hãy lưu bản sao lưu vào Tệp / iCloud Drive.')}</p>
       </div>
 
       <section className="glass-card stack">
-        <h3>1 · Tạo bản sao lưu</h3>
-        <p className="small muted">Gồm mọi chuyến đi, hoạt động, địa điểm, chi phí, kỷ niệm, giao diện, ảnh nền, ảnh và tệp gốc (vé, QR). Nội dung riêng tư vẫn ở dạng đã mã hóa.</p>
-        <label className="toggle-row"><input type="checkbox" checked={encrypt} onChange={(e: any) => setEncrypt(e.target.checked)} /> Mã hóa toàn bộ tệp sao lưu (khuyên dùng)</label>
+        <h3>{t('1 · Tạo bản sao lưu')}</h3>
+        <p className="small muted">{t('Gồm mọi chuyến đi, hoạt động, địa điểm, chi phí, kỷ niệm, giao diện, ảnh nền, ảnh và tệp gốc (vé, QR). Nội dung riêng tư vẫn ở dạng đã mã hóa.')}</p>
+        <label className="toggle-row"><input type="checkbox" checked={encrypt} onChange={(e: any) => setEncrypt(e.target.checked)} /> {' '}{t('Mã hóa toàn bộ tệp sao lưu (khuyên dùng)')}</label>
         {encrypt && (
           <>
-            <Field label="Mật khẩu sao lưu"><input type="password" autoComplete="new-password" value={pass} onChange={(e: any) => setPass(e.target.value)} /></Field>
-            <Field label="Nhập lại"><input type="password" autoComplete="new-password" value={pass2} onChange={(e: any) => setPass2(e.target.value)} /></Field>
-            <p className="warn-box xsmall">Quên mật khẩu này = không thể khôi phục bản sao lưu. Không ai lấy lại được.</p>
+            <Field label={t('Mật khẩu sao lưu')}><input type="password" autoComplete="new-password" value={pass} onChange={(e: any) => setPass(e.target.value)} /></Field>
+            <Field label={t('Nhập lại')}><input type="password" autoComplete="new-password" value={pass2} onChange={(e: any) => setPass2(e.target.value)} /></Field>
+            <p className="warn-box xsmall">{t('Quên mật khẩu này = không thể khôi phục bản sao lưu. Không ai lấy lại được.')}</p>
           </>
         )}
-        <button className="btn primary" disabled={!!busy || (encrypt && (pass.length < 6 || pass !== pass2))} onClick={create}>{busy || 'Tạo bản sao lưu'}</button>
+        <button className="btn primary" disabled={!!busy || (encrypt && (pass.length < 6 || pass !== pass2))} onClick={create}>{busy || t('Tạo bản sao lưu')}</button>
         {created && (
           <div className="card">
-            <p>✓ <b>Đã tạo</b>: {created.log.fileName} · {bytes(created.log.size)}</p>
-            <button className="btn" onClick={save}>2 · Lưu ra ngoài (Tệp / iCloud / AirDrop)…</button>
+            <p>✓ <b>{t('Đã tạo')}</b>: {created.log.fileName} · {bytes(created.log.size)}</p>
+            <button className="btn" onClick={save}>{t('2 · Lưu ra ngoài (Tệp / iCloud / AirDrop)…')}</button>
           </div>
         )}
       </section>
 
       <section className="glass-card stack">
-        <h3>3 · Xác minh bản đã lưu</h3>
-        <p className="small muted">Chọn lại chính tệp bạn đã lưu. Ứng dụng đọc toàn bộ, so mã SHA-256 và kiểm tra từng tệp đính kèm. Chỉ khi đó mới đánh dấu “Đã xác minh”.</p>
-        <button className="btn" onClick={() => openFile('verify')}>Chọn tệp để xác minh…</button>
+        <h3>{t('3 · Xác minh bản đã lưu')}</h3>
+        <p className="small muted">{t('Chọn lại chính tệp bạn đã lưu. Ứng dụng đọc toàn bộ, so mã SHA-256 và kiểm tra từng tệp đính kèm. Chỉ khi đó mới đánh dấu “Đã xác minh”.')}</p>
+        <button className="btn" onClick={() => openFile('verify')}>{t('Chọn tệp để xác minh…')}</button>
       </section>
 
       <section className="glass-card stack">
-        <h3>4 · Khôi phục</h3>
-        <button className="btn" onClick={() => openFile('restore')}>Chọn tệp sao lưu…</button>
+        <h3>{t('4 · Khôi phục')}</h3>
+        <button className="btn" onClick={() => openFile('restore')}>{t('Chọn tệp sao lưu…')}</button>
       </section>
 
       {needPass && (
         <section className="glass-card stack">
-          <h3>Tệp đã mã hóa</h3>
-          <Field label="Mật khẩu sao lưu"><input type="password" value={rPass} onChange={(e: any) => setRPass(e.target.value)} /></Field>
-          <button className="btn primary" disabled={!rPass || !!busy} onClick={unlockFile}>{busy || 'Mở tệp'}</button>
+          <h3>{t('Tệp đã mã hóa')}</h3>
+          <Field label={t('Mật khẩu sao lưu')}><input type="password" value={rPass} onChange={(e: any) => setRPass(e.target.value)} /></Field>
+          <button className="btn primary" disabled={!rPass || !!busy} onClick={unlockFile}>{busy || t('Mở tệp')}</button>
         </section>
       )}
 
       {p && (
-        <section className="glass-card stack" aria-label="Xem trước khôi phục">
-          <h3>Xem trước khôi phục</h3>
-          <p className="small">Tạo lúc {new Date(p.manifest.createdAt).toLocaleString('vi-VN')} · định dạng v{p.manifest.formatVersion}</p>
-          <p className={p.integrityOk ? 'ok-text' : 'error'}>{p.integrityOk ? '✓ Toàn vẹn: mọi tệp khớp mã kiểm tra' : `⚠︎ ${p.problems.length} vấn đề toàn vẹn`}</p>
+        <section className="glass-card stack" aria-label={t('Xem trước khôi phục')}>
+          <h3>{t('Xem trước khôi phục')}</h3>
+          <p className="small">{t('Tạo lúc')}{' '}{new Date(p.manifest.createdAt).toLocaleString(locale())} {' '}{t('· định dạng v')}{p.manifest.formatVersion}</p>
+          <p className={p.integrityOk ? 'ok-text' : 'error'}>{p.integrityOk ? t('✓ Toàn vẹn: mọi tệp khớp mã kiểm tra') : t('⚠︎ {0} vấn đề toàn vẹn', p.problems.length)}</p>
           {!p.integrityOk && <ul className="xsmall">{p.problems.slice(0, 8).map((x) => <li key={x}>{x}</li>)}</ul>}
           {p.manifest.journeys.map((jr) => (
             <div key={jr.id} className="list-row">
-              <label className="toggle-row grow"><input type="checkbox" checked={sel.includes(jr.id)} onChange={(e: any) => setSel(e.target.checked ? [...sel, jr.id] : sel.filter((x) => x !== jr.id))} /> <span><b>{jr.title}</b><span className="xsmall muted block">{jr.counts.activities ?? 0} hoạt động · {jr.counts.memories ?? 0} kỷ niệm · {jr.counts.docs ?? 0} giấy tờ · {jr.counts.blobs ?? 0} tệp</span></span></label>
-              <button className="btn small" onClick={async () => { await restoreAsNew(p.data, jr.id); toast(`Đã khôi phục “${jr.title}” thành chuyến đi mới`); }}>Thành chuyến mới</button>
+              <label className="toggle-row grow"><input type="checkbox" checked={sel.includes(jr.id)} onChange={(e: any) => setSel(e.target.checked ? [...sel, jr.id] : sel.filter((x) => x !== jr.id))} /> <span><b>{jr.title}</b><span className="xsmall muted block">{jr.counts.activities ?? 0} {' '}{t('hoạt động ·')}{' '}{jr.counts.memories ?? 0} {' '}{t('kỷ niệm ·')}{' '}{jr.counts.docs ?? 0} {' '}{t('giấy tờ ·')}{' '}{jr.counts.blobs ?? 0} {' '}{t('tệp')}</span></span></label>
+              <button className="btn small" onClick={async () => { await restoreAsNew(p.data, jr.id); toast(t('Đã khôi phục “{0}” thành chuyến đi mới', jr.title)); }}>{t('Thành chuyến mới')}</button>
             </div>
           ))}
           <div className="row gap wrap">
-            <button className="btn" disabled={!sel.length} onClick={async () => { await restoreSelective(p.data, sel); toast('Đã khôi phục các chuyến đã chọn (bản trùng được thêm dưới dạng bản sao)'); }}>Khôi phục chọn lọc ({sel.length})</button>
-            <button className="btn danger ghost" onClick={() => setFullConfirm(true)}>Khôi phục toàn bộ (thay thế)…</button>
+            <button className="btn" disabled={!sel.length} onClick={async () => { await restoreSelective(p.data, sel); toast(t('Đã khôi phục các chuyến đã chọn (bản trùng được thêm dưới dạng bản sao)')); }}>{t('Khôi phục chọn lọc (')}{sel.length})</button>
+            <button className="btn danger ghost" onClick={() => setFullConfirm(true)}>{t('Khôi phục toàn bộ (thay thế)…')}</button>
           </div>
-          <p className="muted xsmall">Khôi phục không bao giờ âm thầm ghi đè. Chỉ “toàn bộ” mới thay thế dữ liệu hiện có.</p>
+          <p className="muted xsmall">{t('Khôi phục không bao giờ âm thầm ghi đè. Chỉ “toàn bộ” mới thay thế dữ liệu hiện có.')}</p>
         </section>
       )}
 
       <section className="glass-card">
-        <h3>Nhật ký sao lưu</h3>
-        {!settings.backups.length && <p className="muted small">Chưa có bản sao lưu nào.</p>}
+        <h3>{t('Nhật ký sao lưu')}</h3>
+        {!settings.backups.length && <p className="muted small">{t('Chưa có bản sao lưu nào.')}</p>}
         {settings.backups.map((b) => (
           <div key={b.id} className="backup-row small">
             <b>{b.fileName}</b> <span className="muted">{bytes(b.size)}</span>
             <div className="badges">
-              <span className="badge on">Đã tạo {new Date(b.createdAt).toLocaleString('vi-VN')}</span>
-              <span className={`badge ${b.saved ? 'on' : ''}`}>{b.saved ? `Đã lưu (bạn xác nhận) ${new Date(b.saved).toLocaleDateString('vi-VN')}` : 'Chưa lưu'}</span>
-              <span className={`badge ${b.verified ? 'ok' : ''}`}>{b.verified ? `Đã xác minh ${new Date(b.verified).toLocaleDateString('vi-VN')}` : 'Chưa xác minh'}</span>
+              <span className="badge on">{t('Đã tạo')}{' '}{new Date(b.createdAt).toLocaleString(locale())}</span>
+              <span className={`badge ${b.saved ? 'on' : ''}`}>{b.saved ? t('Đã lưu (bạn xác nhận) {0}', new Date(b.saved).toLocaleDateString(locale())) : t('Chưa lưu')}</span>
+              <span className={`badge ${b.verified ? 'ok' : ''}`}>{b.verified ? t('Đã xác minh {0}', new Date(b.verified).toLocaleDateString(locale())) : t('Chưa xác minh')}</span>
             </div>
           </div>
         ))}
       </section>
 
-      <Confirm open={askSaved} title="Bạn đã lưu tệp chưa?" body="Trình duyệt không thể biết tệp đã thực sự được lưu ở đâu. Chỉ xác nhận nếu bạn thấy tệp trong Tệp / iCloud Drive." confirmText="Có, tôi đã lưu" onConfirm={async () => { await updateLog(created!.log.id, { saved: nowIso() }); toast('Đã đánh dấu “Đã lưu”. Hãy xác minh ở bước 3.'); }} onClose={() => setAskSaved(false)} />
-      <Confirm open={fullConfirm} danger typed="KHÔI PHỤC" title="Thay thế toàn bộ dữ liệu?" body="Mọi dữ liệu hiện có trên máy sẽ bị XÓA và thay bằng nội dung bản sao lưu (kể cả cài đặt Két). Không thể hoàn tác." confirmText="Thay thế toàn bộ" onConfirm={async () => { await restoreFull(p!.data); toast('Đã khôi phục toàn bộ'); location.hash = '#/'; }} onClose={() => setFullConfirm(false)} />
+      <Confirm open={askSaved} title={t('Bạn đã lưu tệp chưa?')} body={t('Trình duyệt không thể biết tệp đã thực sự được lưu ở đâu. Chỉ xác nhận nếu bạn thấy tệp trong Tệp / iCloud Drive.')} confirmText={t('Có, tôi đã lưu')} onConfirm={async () => { await updateLog(created!.log.id, { saved: nowIso() }); toast(t('Đã đánh dấu “Đã lưu”. Hãy xác minh ở bước 3.')); }} onClose={() => setAskSaved(false)} />
+      <Confirm open={fullConfirm} danger typed={t('KHÔI PHỤC')} title={t('Thay thế toàn bộ dữ liệu?')} body={t('Mọi dữ liệu hiện có trên máy sẽ bị XÓA và thay bằng nội dung bản sao lưu (kể cả cài đặt Két). Không thể hoàn tác.')} confirmText={t('Thay thế toàn bộ')} onConfirm={async () => { await restoreFull(p!.data); toast(t('Đã khôi phục toàn bộ')); location.hash = '#/'; }} onClose={() => setFullConfirm(false)} />
     </div>
   );
 }

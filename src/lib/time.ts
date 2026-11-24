@@ -1,12 +1,14 @@
+
+import { t, tr } from './i18n';
 // Time helpers. Journey dates and activity times are stored as LOCAL wall-clock
 // strings plus an IANA zone, so they never shift when the phone's zone changes.
 
 export const TZ_LABELS: Record<string, string> = {
-  'Asia/Shanghai': 'Giờ Trung Quốc (UTC+8)',
-  'Asia/Seoul': 'Giờ Hàn Quốc (UTC+9)',
-  'Asia/Ho_Chi_Minh': 'Giờ Việt Nam (UTC+7)',
-  'Asia/Tokyo': 'Giờ Nhật Bản (UTC+9)',
-  'Europe/Paris': 'Giờ Paris',
+  'Asia/Shanghai': tr('Giờ Trung Quốc (UTC+8)'),
+  'Asia/Seoul': tr('Giờ Hàn Quốc (UTC+9)'),
+  'Asia/Ho_Chi_Minh': tr('Giờ Việt Nam (UTC+7)'),
+  'Asia/Tokyo': tr('Giờ Nhật Bản (UTC+9)'),
+  'Europe/Paris': tr('Giờ Paris'),
   UTC: 'UTC',
 };
 export const tzLabel = (tz: string) => TZ_LABELS[tz] ?? tz;
@@ -32,7 +34,7 @@ export function daysBetween(a: string, b: string): number {
 }
 export function weekdayVi(date: string): string {
   const w = new Date(date + 'T00:00:00Z').getUTCDay();
-  return ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'][w];
+  return [t('Chủ nhật'), t('Thứ Hai'), t('Thứ Ba'), t('Thứ Tư'), t('Thứ Năm'), t('Thứ Sáu'), t('Thứ Bảy')][w];
 }
 export function fmtDateVi(date: string): string {
   const [y, m, d] = date.split('-');

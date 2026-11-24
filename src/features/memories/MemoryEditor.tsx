@@ -7,14 +7,15 @@ import { useJourney } from '../journey/JourneyShell';
 import { nowIso, uid } from '../../lib/util';
 import { encryptBlob, makeMemoryPublic, readPrivateMemory, saveEncryptedMemory, vaultUnlocked } from '../../lib/vault';
 import { Markup, useVaultOpen } from './MemoryCommon';
+import { t } from '../../lib/i18n';
 
 const DRAFT_KEY = (id: string) => `chang-draft-${id}`;
 
 export function MemoryEditorPage({ memoryId }: { memoryId?: string }) {
   const { journey: j, days } = useJourney();
   const [existing, loaded] = useLive(() => (memoryId ? db.get<Memory>('memories', memoryId) : Promise.resolve(undefined)), [memoryId], undefined as Memory | undefined);
-  if (memoryId && !loaded) return <div className="page muted">Đang mở…</div>;
-  if (memoryId && !existing) return <div className="page"><PageHeader title="Không tìm thấy" back={`/j/${j.id}/memories`} /></div>;
+  if (memoryId && !loaded) return <div className="page muted">{t('Đang mở…')}</div>;
+  if (memoryId && !existing) return <div className="page"><PageHeader title={t('Không tìm thấy')} back={`/j/${j.id}/memories`} /></div>;
   const dayParam = queryParam('day') ?? undefined;
   const day = days.find((d) => d.id === dayParam);
   const fresh: Memory = {
@@ -35,7 +36,7 @@ function Editor({ initial, isNew }: { initial: Memory; isNew: boolean }) {
   const ta = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
-    if (initial.encrypted && vaultOpen) readPrivateMemory(initial).then(setText).catch(() => toast('Không giải mã được', 'err'));
+    if (initial.encrypted && vaultOpen) readPrivateMemory(initial).then(setText).catch(() => toast(t('Không giải mã được'), 'err'));
   }, [vaultOpen]);
   // offline draft autosave (plain drafts only; private drafts are never written unencrypted)
   useEffect(() => {
@@ -52,9 +53,9 @@ function Editor({ initial, isNew }: { initial: Memory; isNew: boolean }) {
   if (m.encrypted && !text)
     return (
       <div className="page">
-        <PageHeader title="Kỷ niệm riêng tư" back={`/j/${j.id}/memories`} />
-        <p>🔒 Nội dung đã được mã hóa. Mở khóa Két để đọc và sửa.</p>
-        <button className="btn" onClick={() => go('/vault')}>Mở Két riêng tư</button>
+        <PageHeader title={t('Kỷ niệm riêng tư')} back={`/j/${j.id}/memories`} />
+        <p>{t('🔒 Nội dung đã được mã hóa. Mở khóa Két để đọc và sửa.')}</p>
+        <button className="btn" onClick={() => go('/vault')}>{t('Mở Két riêng tư')}</button>
       </div>
     );
 
@@ -72,7 +73,7 @@ function Editor({ initial, isNew }: { initial: Memory; isNew: boolean }) {
       let rec: Memory = { ...m, title: text.title, body: text.body, updatedAt: nowIso() };
       if (m.privacy === 'private') {
         if (!vaultUnlocked()) {
-          toast('Cần mở khóa Két để lưu nội dung riêng tư (mã hóa)', 'warn');
+          toast(t('Cần mở khóa Két để lưu nội dung riêng tư (mã hóa)'), 'warn');
           return go('/vault');
         }
         for (const id of rec.photoBlobIds) await encryptBlob(id);
@@ -83,42 +84,42 @@ function Editor({ initial, isNew }: { initial: Memory; isNew: boolean }) {
       }
       await db.put('memories', rec);
       try { localStorage.removeItem(DRAFT_KEY(isNew ? j.id : m.id)); } catch { /* */ }
-      toast(m.privacy === 'private' ? 'Đã lưu (đã mã hóa)' : 'Đã lưu kỷ niệm');
+      toast(m.privacy === 'private' ? t('Đã lưu (đã mã hóa)') : t('Đã lưu kỷ niệm'));
       go(`/j/${j.id}/memories/${rec.id}`);
     } catch (e: any) {
-      toast(e.message ?? 'Không lưu được', 'err');
+      toast(e.message ?? t('Không lưu được'), 'err');
     }
   };
 
   return (
     <div className="page">
-      <PageHeader title={isNew ? 'Kỷ niệm mới' : 'Sửa kỷ niệm'} back={`/j/${j.id}/memories`} right={<button className="btn small primary" onClick={save}>Lưu</button>} />
+      <PageHeader title={isNew ? t('Kỷ niệm mới') : t('Sửa kỷ niệm')} back={`/j/${j.id}/memories`} right={<button className="btn small primary" onClick={save}>{t('Lưu')}</button>} />
       <div className="stack">
-        <Field label="Tiêu đề"><input value={text!.title} onChange={(e: any) => setText({ ...text!, title: e.target.value })} placeholder="Một khoảnh khắc…" /></Field>
+        <Field label={t('Tiêu đề')}><input value={text!.title} onChange={(e: any) => setText({ ...text!, title: e.target.value })} placeholder={t('Một khoảnh khắc…')} /></Field>
         <div className="row gap">
-          <Field label="Ngày">
+          <Field label={t('Ngày')}>
             <select value={m.dayId ?? ''} onChange={(e: any) => setM({ ...m, dayId: e.target.value || undefined })}>
               <option value="">—</option>
-              {days.map((d) => <option key={d.id} value={d.id}>Ngày {d.index}</option>)}
+              {days.map((d) => <option key={d.id} value={d.id}>{t('Ngày')}{' '}{d.index}</option>)}
             </select>
           </Field>
-          <Field label="Bố cục">
+          <Field label={t('Bố cục')}>
             <select value={m.layout} onChange={(e: any) => setM({ ...m, layout: e.target.value })}>
-              <option value="classic">Cổ điển</option><option value="polaroid">Polaroid</option><option value="letter">Lá thư</option><option value="scrapbook">Scrapbook</option>
+              <option value="classic">{t('Cổ điển')}</option><option value="polaroid">{t('Polaroid')}</option><option value="letter">{t('Lá thư')}</option><option value="scrapbook">{t('Scrapbook')}</option>
             </select>
           </Field>
         </div>
         <div className="toolbar">
-          <button className="icon-btn" aria-label="In đậm" onClick={() => wrap('**')}><LuBold size={18} /></button>
-          <button className="icon-btn" aria-label="In nghiêng" onClick={() => wrap('_')}><LuItalic size={18} /></button>
-          <button className="btn small ghost" onClick={() => setPreview(!preview)}>{preview ? 'Viết' : 'Xem trước'}</button>
+          <button className="icon-btn" aria-label={t('In đậm')} onClick={() => wrap('**')}><LuBold size={18} /></button>
+          <button className="icon-btn" aria-label={t('In nghiêng')} onClick={() => wrap('_')}><LuItalic size={18} /></button>
+          <button className="btn small ghost" onClick={() => setPreview(!preview)}>{preview ? t('Viết') : t('Xem trước')}</button>
         </div>
-        {preview ? <Markup className={`memory-body layout-${m.layout} card`} text={text!.body} /> : <textarea ref={ta} rows={10} className="journal-area" value={text!.body} onChange={(e: any) => setText({ ...text!, body: e.target.value })} placeholder="Hôm nay…" />}
+        {preview ? <Markup className={`memory-body layout-${m.layout} card`} text={text!.body} /> : <textarea ref={ta} rows={10} className="journal-area" value={text!.body} onChange={(e: any) => setText({ ...text!, body: e.target.value })} placeholder={t('Hôm nay…')} />}
         <div className="thumb-row">
           {m.photoBlobIds.map((id) => (
             <div key={id} className="thumb-wrap">
               <BlobImg id={id} className="thumb" />
-              <button className="mini danger" aria-label="Bỏ ảnh" onClick={() => setM({ ...m, photoBlobIds: m.photoBlobIds.filter((x) => x !== id) })}>×</button>
+              <button className="mini danger" aria-label={t('Bỏ ảnh')} onClick={() => setM({ ...m, photoBlobIds: m.photoBlobIds.filter((x) => x !== id) })}>×</button>
             </div>
           ))}
         </div>
@@ -129,16 +130,15 @@ function Editor({ initial, isNew }: { initial: Memory; isNew: boolean }) {
             for (const f of fs) ids.push((await saveFileAsBlob(f, f.name, j.id)).id);
             setM((cur) => ({ ...cur, photoBlobIds: [...cur.photoBlobIds, ...ids] }));
           } catch (e: any) { toast(e.message, 'err'); }
-        }}><LuImage size={14} /> Thêm ảnh</button>
-        <label className="toggle-row"><input type="checkbox" checked={m.keepsake} onChange={(e: any) => setM({ ...m, keepsake: e.target.checked })} /> <LuStar size={14} /> Cất vào tủ Keepsakes</label>
+        }}><LuImage size={14} /> {' '}{t('Thêm ảnh')}</button>
+        <label className="toggle-row"><input type="checkbox" checked={m.keepsake} onChange={(e: any) => setM({ ...m, keepsake: e.target.checked })} /> <LuStar size={14} /> {' '}{t('Cất vào tủ Keepsakes')}</label>
         <label className="toggle-row">
           <input type="checkbox" checked={m.privacy === 'private'} onChange={(e: any) => setM({ ...m, privacy: e.target.checked ? 'private' : 'normal' })} />
-          <LuLock size={14} /> Riêng tư — mã hóa bằng mật khẩu Két, ẩn khỏi tìm kiếm, xem trước và xuất bản
-        </label>
-        {m.privacy === 'private' && !vaultOpen && <p className="warn-box small">Két đang khóa. Hãy <button className="link-btn" onClick={() => go('/vault')}>mở Két</button> trước khi lưu.</p>}
-        {!isNew && <button className="btn danger ghost" onClick={() => setDel(true)}>Xóa kỷ niệm</button>}
+          <LuLock size={14} /> {' '}{t('Riêng tư — mã hóa bằng mật khẩu Két, ẩn khỏi tìm kiếm, xem trước và xuất bản')}</label>
+        {m.privacy === 'private' && !vaultOpen && <p className="warn-box small">{t('Két đang khóa. Hãy')}{' '}<button className="link-btn" onClick={() => go('/vault')}>{t('mở Két')}</button> {' '}{t('trước khi lưu.')}</p>}
+        {!isNew && <button className="btn danger ghost" onClick={() => setDel(true)}>{t('Xóa kỷ niệm')}</button>}
       </div>
-      <Confirm open={del} danger title="Xóa kỷ niệm này?" body="Ảnh đính kèm vẫn được giữ lại trong bộ nhớ nếu được dùng ở nơi khác." onConfirm={async () => (await db.del('memories', m.id), go(`/j/${j.id}/memories`))} onClose={() => setDel(false)} />
+      <Confirm open={del} danger title={t('Xóa kỷ niệm này?')} body={t('Ảnh đính kèm vẫn được giữ lại trong bộ nhớ nếu được dùng ở nơi khác.')} onConfirm={async () => (await db.del('memories', m.id), go(`/j/${j.id}/memories`))} onClose={() => setDel(false)} />
     </div>
   );
 }

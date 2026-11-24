@@ -1,5 +1,6 @@
 /* Service worker — app shell cache for offline use. No push, no background sync. */
 const VERSION = '__BUILD__';
+const APP_VERSION = '__APP_VERSION__';
 const CACHE = 'chang-shell-' + VERSION;
 const SHELL = ['./', './index.html', './app.js', './app.css', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/xmas-skyline-emblem.svg'];
 
@@ -33,18 +34,25 @@ self.addEventListener('fetch', (e) => {
     );
     return;
   }
-  // assets: cache first (versioned by query string), then network
+  // assets: exact (versioned) cache hit → network → any cached copy (offline). An update therefore never mixes
+  // a new page with old scripts, and offline still works. User data lives in IndexedDB and is never touched here.
   e.respondWith(
-    caches.match(req, { ignoreSearch: true }).then(
+    caches.match(req).then(
       (hit) =>
         hit ||
-        fetch(req).then((res) => {
-          if (res.ok && res.type === 'basic') {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(req, copy));
-          }
-          return res;
-        }),
+        fetch(req)
+          .then((res) => {
+            if (res.ok && res.type === 'basic') {
+              const copy = res.clone();
+              caches.open(CACHE).then((c) => c.put(req, copy));
+            }
+            return res;
+          })
+          .catch(() => caches.match(req, { ignoreSearch: true }).then((r) => r || Response.error())),
     ),
   );
+});
+
+self.addEventListener('message', (e) => {
+  if (e.data === 'version') e.source?.postMessage({ type: 'version', version: APP_VERSION, build: VERSION });
 });

@@ -4,6 +4,7 @@
 import { IMPORT_FORMAT, IMPORT_FORMAT_VERSION } from '../db/schema';
 import type { Activity, ChecklistItem, Day, Expense, Journey, Place, Pose, StoreName, WalletDoc } from '../db/schema';
 import { sha256Hex } from './crypto';
+import { t } from './i18n';
 
 export interface JourneyBundle {
   journey: Journey;
@@ -37,27 +38,27 @@ export async function parseJourneyFile(text: string): Promise<JourneyBundle> {
   try {
     f = JSON.parse(text.replace(/^﻿/, ''));
   } catch {
-    throw new ImportError('Tệp không phải JSON hợp lệ.');
+    throw new ImportError(t('Tệp không phải JSON hợp lệ.'));
   }
-  if (f?.format !== IMPORT_FORMAT) throw new ImportError('Đây không phải tệp hành trình của ứng dụng.');
-  if (typeof f.version !== 'number' || f.version > IMPORT_FORMAT_VERSION) throw new ImportError('Tệp được tạo bởi phiên bản ứng dụng mới hơn.');
-  for (const k of KEYS.slice(1)) if (!Array.isArray(f[k])) throw new ImportError(`Thiếu danh sách “${k}”.`);
+  if (f?.format !== IMPORT_FORMAT) throw new ImportError(t('Đây không phải tệp hành trình của ứng dụng.'));
+  if (typeof f.version !== 'number' || f.version > IMPORT_FORMAT_VERSION) throw new ImportError(t('Tệp được tạo bởi phiên bản ứng dụng mới hơn.'));
+  for (const k of KEYS.slice(1)) if (!Array.isArray(f[k])) throw new ImportError(t('Thiếu danh sách “{0}”.', k));
   const j = f.journey;
   if (!j || typeof j.id !== 'string' || typeof j.title !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(j.startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(j.endDate) || typeof j.timeZone !== 'string' || !j.settings)
-    throw new ImportError('Thông tin chuyến đi không đầy đủ.');
+    throw new ImportError(t('Thông tin chuyến đi không đầy đủ.'));
   const bundle = Object.fromEntries(KEYS.map((k) => [k, f[k]])) as unknown as JourneyBundle;
-  if (f.sha256 !== (await sha256Hex(canonical(bundle)))) throw new ImportError('Tệp bị thay đổi hoặc hỏng (mã kiểm tra không khớp).');
+  if (f.sha256 !== (await sha256Hex(canonical(bundle)))) throw new ImportError(t('Tệp bị thay đổi hoặc hỏng (mã kiểm tra không khớp).'));
   // referential integrity
   const own = (r: { journeyId?: string }) => r.journeyId === j.id;
-  for (const k of KEYS.slice(1)) for (const r of f[k]) if (!r || typeof r.id !== 'string' || !own(r)) throw new ImportError(`Bản ghi trong “${k}” không thuộc chuyến đi này.`);
+  for (const k of KEYS.slice(1)) for (const r of f[k]) if (!r || typeof r.id !== 'string' || !own(r)) throw new ImportError(t('Bản ghi trong “{0}” không thuộc chuyến đi này.', k));
   const dayIds = new Set(bundle.days.map((d) => d.id));
   const placeIds = new Set(bundle.places.map((p) => p.id));
   for (const a of bundle.activities) {
-    if (!dayIds.has(a.dayId)) throw new ImportError(`Hoạt động “${a.title}” trỏ tới ngày không tồn tại.`);
-    if (a.placeId && !placeIds.has(a.placeId)) throw new ImportError(`Hoạt động “${a.title}” trỏ tới địa điểm không tồn tại.`);
+    if (!dayIds.has(a.dayId)) throw new ImportError(t('Hoạt động “{0}” trỏ tới ngày không tồn tại.', a.title));
+    if (a.placeId && !placeIds.has(a.placeId)) throw new ImportError(t('Hoạt động “{0}” trỏ tới địa điểm không tồn tại.', a.title));
   }
   const ids = KEYS.slice(1).flatMap((k) => (bundle[k] as { id: string }[]).map((r) => r.id));
-  if (new Set(ids).size !== ids.length) throw new ImportError('Tệp có mã bản ghi bị trùng.');
+  if (new Set(ids).size !== ids.length) throw new ImportError(t('Tệp có mã bản ghi bị trùng.'));
   return bundle;
 }
 

@@ -1,7 +1,8 @@
 import type { Expense, ExpenseCategory } from '../db/schema';
+import { tr } from './i18n';
 
 export const CATEGORY_LABEL: Record<ExpenseCategory, string> = {
-  transport: 'Di chuyển', food: 'Ăn uống', hotel: 'Khách sạn', tickets: 'Vé', photo: 'Chụp ảnh', shopping: 'Mua sắm', gifts: 'Quà', other: 'Khác',
+  transport: tr('Di chuyển'), food: tr('Ăn uống'), hotel: tr('Khách sạn'), tickets: tr('Vé'), photo: tr('Chụp ảnh'), shopping: tr('Mua sắm'), gifts: tr('Quà'), other: tr('Khác'),
 };
 
 /** Net money actually moved for one expense (deposits + payments − refunds). */
@@ -24,11 +25,11 @@ export function payState(e: Expense): PayState {
   return 'partially-paid';
 }
 export const PAYSTATE_LABEL: Record<PayState, string> = {
-  'estimate-only': 'Chỉ là ước tính',
-  'deposit-paid': 'Đã đặt cọc',
-  'partially-paid': 'Đã trả một phần',
-  paid: 'Đã trả',
-  refunded: 'Đã hoàn tiền',
+  'estimate-only': tr('Chỉ là ước tính'),
+  'deposit-paid': tr('Đã đặt cọc'),
+  'partially-paid': tr('Đã trả một phần'),
+  paid: tr('Đã trả'),
+  refunded: tr('Đã hoàn tiền'),
 };
 
 export interface BudgetSummary {

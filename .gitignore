@@ -12,3 +12,4 @@ tests/e2e/results.json
 *.changjourney
 *.changjourney.json
 !tests/fixtures/demo-journey.changjourney.json
+tests/e2e/v101-results.json

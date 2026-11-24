@@ -1,4 +1,5 @@
 import type { Journey, ThemeId } from '../db/schema';
+import { t } from './i18n';
 
 export interface ThemeTokens { name: string; bg: string; bg2: string; card: string; cardBorder: string; text: string; muted: string; accent: string; accent2: string; deco: string }
 
@@ -14,7 +15,7 @@ export function tokensFor(j: Pick<Journey, 'settings'> | undefined): ThemeTokens
   const s = j.settings;
   if (s.theme === 'custom' && s.customColors) {
     const c = s.customColors;
-    return { name: 'Tùy chỉnh', bg: c.bg, bg2: c.bg, card: c.card, cardBorder: c.accent + '88', text: c.text, muted: c.text + 'bb', accent: c.accent, accent2: c.accent, deco: '✨' };
+    return { name: t('Tùy chỉnh'), bg: c.bg, bg2: c.bg, card: c.card, cardBorder: c.accent + '88', text: c.text, muted: c.text + 'bb', accent: c.accent, accent2: c.accent, deco: '✨' };
   }
   return THEMES[(s.theme === 'custom' ? 'christmas-emerald' : s.theme) as keyof typeof THEMES];
 }

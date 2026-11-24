@@ -5,6 +5,7 @@ import type { StoreName } from '../db/schema';
 import { readBlob } from '../db/repo';
 import { readEncryptedBlob, vaultUnlocked } from '../lib/vault';
 import { LuX, LuChevronLeft } from 'react-icons/lu';
+import { t } from '../lib/i18n';
 
 // ───────── Router (hash based: works from any static host and from the Home Screen)
 export function useRoute(): string[] {
@@ -64,12 +65,23 @@ export function ToastHost({ children }: { children: ReactNode }) {
     <ToastCtx.Provider value={push}>
       {children}
       <div className="toasts" role="status" aria-live="polite">
-        {list.map((t) => (
-          <div key={t.id} className={`toast toast-${t.tone}`}>{t.text}</div>
+        {list.map((x) => (
+          <div key={x.id} className={`toast toast-${x.tone}`}>{x.text}</div>
         ))}
       </div>
     </ToastCtx.Provider>
   );
+}
+
+// ───────── Scroll lock with a counter, so nested overlays (sheet → viewer) never unlock each other
+let scrollLocks = 0;
+export function lockScroll() {
+  scrollLocks++;
+  document.body.classList.add('no-scroll');
+}
+export function unlockScroll() {
+  scrollLocks = Math.max(0, scrollLocks - 1);
+  if (!scrollLocks) document.body.classList.remove('no-scroll');
 }
 
 // ───────── Layout pieces
@@ -77,7 +89,7 @@ export function PageHeader({ title, sub, back, right }: { title: ReactNode; sub?
   return (
     <header className="page-head">
       {back !== undefined && (
-        <button className="icon-btn" aria-label="Quay lại" onClick={() => (typeof back === 'function' ? back() : go(back))}>
+        <button className="icon-btn" aria-label={t('Quay lại')} onClick={() => (typeof back === 'function' ? back() : go(back))}>
           <LuChevronLeft size={22} />
         </button>
       )}
@@ -98,10 +110,10 @@ export function Sheet({ open, onClose, title, children, full }: { open: boolean;
     if (!open) return;
     const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     addEventListener('keydown', k);
-    document.body.classList.add('no-scroll');
+    lockScroll();
     return () => {
       removeEventListener('keydown', k);
-      document.body.classList.remove('no-scroll');
+      unlockScroll();
     };
   }, [open]);
   if (!open) return null;
@@ -129,7 +141,7 @@ export function Sheet({ open, onClose, title, children, full }: { open: boolean;
         </div>
         <div className="sheet-head">
           <h2>{title}</h2>
-          <button className="icon-btn" aria-label="Đóng" onClick={onClose}>
+          <button className="icon-btn" aria-label={t('Đóng')} onClick={onClose}>
             <LuX size={22} />
           </button>
         </div>
@@ -139,7 +151,7 @@ export function Sheet({ open, onClose, title, children, full }: { open: boolean;
   );
 }
 
-export function Confirm({ open, title, body, danger, confirmText = 'Xác nhận', typed, onConfirm, onClose }: { open: boolean; title: string; body: ReactNode; danger?: boolean; confirmText?: string; typed?: string; onConfirm: () => void | Promise<void>; onClose: () => void }) {
+export function Confirm({ open, title, body, danger, confirmText = t('Xác nhận'), typed, onConfirm, onClose }: { open: boolean; title: string; body: ReactNode; danger?: boolean; confirmText?: string; typed?: string; onConfirm: () => void | Promise<void>; onClose: () => void }) {
   const [v, setV] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => setV(''), [open]);
@@ -149,12 +161,12 @@ export function Confirm({ open, title, body, danger, confirmText = 'Xác nhận'
         <div>{body}</div>
         {typed && (
           <label className="field">
-            <span>Gõ <b>{typed}</b> để xác nhận</span>
+            <span>{t('Gõ')}{' '}<b>{typed}</b> {' '}{t('để xác nhận')}</span>
             <input value={v} onInput={(e: any) => setV(e.target.value)} autoCapitalize="off" autoCorrect="off" />
           </label>
         )}
         <div className="row gap">
-          <button className="btn ghost" onClick={onClose}>Hủy</button>
+          <button className="btn ghost" onClick={onClose}>{t('Hủy')}</button>
           <button
             className={`btn ${danger ? 'danger' : 'primary'}`}
             disabled={busy || (!!typed && v.trim() !== typed)}
@@ -206,7 +218,7 @@ export function useBlobUrl(id?: string): { url: string | null; state: 'loading' 
 export function BlobImg({ id, alt = '', className, style, onClick }: { id: string; alt?: string; className?: string; style?: any; onClick?: () => void }) {
   const { url, state } = useBlobUrl(id);
   if (state === 'locked') return <div className={`img-ph ${className ?? ''}`} style={style}>🔒</div>;
-  if (state === 'missing') return <div className={`img-ph ${className ?? ''}`} style={style} title="Không tìm thấy ảnh">⚠︎</div>;
+  if (state === 'missing') return <div className={`img-ph ${className ?? ''}`} style={style} title={t('Không tìm thấy ảnh')}>⚠︎</div>;
   if (!url) return <div className={`img-ph ${className ?? ''}`} style={style} />;
   return <img src={url} alt={alt} className={className} style={style} onClick={onClick} loading="lazy" decoding="async" />;
 }

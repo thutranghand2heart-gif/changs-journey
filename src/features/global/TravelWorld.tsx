@@ -3,6 +3,7 @@ import type { Journey, TravelWorldEntry } from '../../db/schema';
 import { db } from '../../db/repo';
 import { Confirm, Field, PageHeader, Sheet, useStore, useToast, go } from '../../ui/core';
 import { uid } from '../../lib/util';
+import { t } from '../../lib/i18n';
 
 export function TravelWorld() {
   const journeys = useStore<Journey>('journeys');
@@ -19,16 +20,16 @@ export function TravelWorld() {
 
   return (
     <div className="page theme-global">
-      <PageHeader title="My Travel World" sub="Nơi đã đến, nơi mơ ước và câu chuyện cả đời" back="/" right={<button className="btn small" onClick={() => setEdit({ id: uid('w'), name: '', country: '', status: 'wishlist', story: '' })}>+ Thêm</button>} />
-      <p className="muted small">Một nơi chỉ được đánh dấu “đã đến” khi bạn tự đánh dấu. Ứng dụng không theo dõi GPS.</p>
+      <PageHeader title={t('My Travel World')} sub={t('Nơi đã đến, nơi mơ ước và câu chuyện cả đời')} back="/" right={<button className="btn small" onClick={() => setEdit({ id: uid('w'), name: '', country: '', status: 'wishlist', story: '' })}>{t('+ Thêm')}</button>} />
+      <p className="muted small">{t('Một nơi chỉ được đánh dấu “đã đến” khi bạn tự đánh dấu. Ứng dụng không theo dõi GPS.')}</p>
 
       <section className="card">
-        <h3>✅ Đã đến ({visited.length})</h3>
+        <h3>{t('✅ Đã đến (')}{visited.length})</h3>
         {visited.map((w) => <WorldRow key={w.id} w={w} onEdit={() => setEdit(w)} />)}
-        {!visited.length && <p className="muted small">Chưa có nơi nào được đánh dấu đã đến.</p>}
+        {!visited.length && <p className="muted small">{t('Chưa có nơi nào được đánh dấu đã đến.')}</p>}
       </section>
       <section className="card">
-        <h3>🗺️ Đã lên kế hoạch</h3>
+        <h3>{t('🗺️ Đã lên kế hoạch')}</h3>
         {planned.map(({ d, j }, i) => (
           <div key={i} className="list-row">
             <span className="grow">{d} <span className="muted small">· {j.title}</span></span>
@@ -36,20 +37,19 @@ export function TravelWorld() {
               className="btn small"
               onClick={async () => {
                 await db.put('world', { id: uid('w'), name: d, country: '', status: 'visited', visitedOn: j.endDate <= today ? j.endDate : today, story: '', journeyId: j.id } satisfies TravelWorldEntry);
-                toast(`Đã đánh dấu ${d} là đã đến`);
+                toast(t('Đã đánh dấu {0} là đã đến', d));
               }}
             >
-              Đánh dấu đã đến
-            </button>
+              {t('Đánh dấu đã đến')}</button>
           </div>
         ))}
       </section>
       <section className="card">
-        <h3>💫 Mơ ước ({wish.length})</h3>
+        <h3>{t('💫 Mơ ước (')}{wish.length})</h3>
         {wish.map((w) => <WorldRow key={w.id} w={w} onEdit={() => setEdit(w)} />)}
       </section>
       <section className="card">
-        <h3>📜 Dòng thời gian</h3>
+        <h3>{t('📜 Dòng thời gian')}</h3>
         <ol className="timeline-simple">
           {timeline.map((j) => (
             <li key={j.id}>
@@ -59,27 +59,27 @@ export function TravelWorld() {
         </ol>
       </section>
 
-      <Sheet open={!!edit} onClose={() => setEdit(null)} title="Địa điểm">
+      <Sheet open={!!edit} onClose={() => setEdit(null)} title={t('Địa điểm')}>
         {edit && (
           <div className="stack">
-            <Field label="Tên nơi"><input value={edit.name} onChange={(e: any) => setEdit({ ...edit, name: e.target.value })} /></Field>
-            <Field label="Quốc gia"><input value={edit.country} onChange={(e: any) => setEdit({ ...edit, country: e.target.value })} /></Field>
-            <Field label="Trạng thái">
+            <Field label={t('Tên nơi')}><input value={edit.name} onChange={(e: any) => setEdit({ ...edit, name: e.target.value })} /></Field>
+            <Field label={t('Quốc gia')}><input value={edit.country} onChange={(e: any) => setEdit({ ...edit, country: e.target.value })} /></Field>
+            <Field label={t('Trạng thái')}>
               <select value={edit.status} onChange={(e: any) => setEdit({ ...edit, status: e.target.value })}>
-                <option value="wishlist">Mơ ước</option>
-                <option value="visited">Đã đến (tôi xác nhận)</option>
+                <option value="wishlist">{t('Mơ ước')}</option>
+                <option value="visited">{t('Đã đến (tôi xác nhận)')}</option>
               </select>
             </Field>
-            {edit.status === 'visited' && <Field label="Ngày đến"><input type="date" value={edit.visitedOn ?? ''} onChange={(e: any) => setEdit({ ...edit, visitedOn: e.target.value })} /></Field>}
-            <Field label="Câu chuyện"><textarea rows={4} value={edit.story} onChange={(e: any) => setEdit({ ...edit, story: e.target.value })} /></Field>
+            {edit.status === 'visited' && <Field label={t('Ngày đến')}><input type="date" value={edit.visitedOn ?? ''} onChange={(e: any) => setEdit({ ...edit, visitedOn: e.target.value })} /></Field>}
+            <Field label={t('Câu chuyện')}><textarea rows={4} value={edit.story} onChange={(e: any) => setEdit({ ...edit, story: e.target.value })} /></Field>
             <div className="row gap">
-              {world.some((w) => w.id === edit.id) && <button className="btn danger ghost" onClick={() => (setDel(edit), setEdit(null))}>Xóa</button>}
-              <button className="btn primary" disabled={!edit.name.trim()} onClick={async () => (await db.put('world', edit), setEdit(null), toast('Đã lưu'))}>Lưu</button>
+              {world.some((w) => w.id === edit.id) && <button className="btn danger ghost" onClick={() => (setDel(edit), setEdit(null))}>{t('Xóa')}</button>}
+              <button className="btn primary" disabled={!edit.name.trim()} onClick={async () => (await db.put('world', edit), setEdit(null), toast(t('Đã lưu')))}>{t('Lưu')}</button>
             </div>
           </div>
         )}
       </Sheet>
-      <Confirm open={!!del} danger title="Xóa địa điểm?" body={del?.name} onConfirm={() => db.del('world', del!.id)} onClose={() => setDel(null)} />
+      <Confirm open={!!del} danger title={t('Xóa địa điểm?')} body={del?.name} onConfirm={() => db.del('world', del!.id)} onClose={() => setDel(null)} />
     </div>
   );
 }

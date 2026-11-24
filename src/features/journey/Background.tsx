@@ -3,6 +3,7 @@ import type { BackgroundSetting, Journey } from '../../db/schema';
 import { BlobImg, Field, PageHeader, pickFiles, useToast } from '../../ui/core';
 import { saveFileAsBlob, saveSettings, updateJourneySettings } from '../../db/repo';
 import { useApp } from '../../ui/app-context';
+import { t, tr } from '../../lib/i18n';
 
 export function BgLayer({ bg }: { bg: BackgroundSetting }) {
   return (
@@ -17,7 +18,7 @@ export function BgLayer({ bg }: { bg: BackgroundSetting }) {
   );
 }
 
-export const PAGE_KEYS: Record<string, string> = { home: 'Home của chuyến đi', journey: 'Journey', map: 'Map', pose: 'Pose', wallet: 'Wallet' };
+export const PAGE_KEYS: Record<string, string> = { home: tr('Home của chuyến đi'), journey: tr('Journey'), map: tr('Map'), pose: tr('Pose'), wallet: tr('Wallet') };
 
 /** Background editor for global Home (journey undefined) or a journey page. */
 export function BackgroundEditor({ journey, pageKey = 'home', back }: { journey?: Journey; pageKey?: string; back: string }) {
@@ -30,7 +31,7 @@ export function BackgroundEditor({ journey, pageKey = 'home', back }: { journey?
   const save = async (v: BackgroundSetting | undefined) => {
     if (journey) await updateJourneySettings(journey.id, { backgrounds: { ...journey.settings.backgrounds, [key]: v } });
     else await saveSettings({ homeBackground: v });
-    toast(v ? 'Đã lưu ảnh nền' : 'Đã khôi phục nền gốc');
+    toast(v ? t('Đã lưu ảnh nền') : t('Đã khôi phục nền gốc'));
   };
   const upload = async () => {
     const [f] = await pickFiles('image/*');
@@ -51,33 +52,33 @@ export function BackgroundEditor({ journey, pageKey = 'home', back }: { journey?
 
   return (
     <div className="page">
-      <PageHeader title="Ảnh nền cá nhân" sub={journey ? journey.title : 'Trang chủ toàn cục'} back={back} />
+      <PageHeader title={t('Ảnh nền cá nhân')} sub={journey ? journey.title : t('Trang chủ toàn cục')} back={back} />
       {journey && (
-        <Field label="Áp dụng cho">
+        <Field label={t('Áp dụng cho')}>
           <select value={key} onChange={(e: any) => (setKey(e.target.value), setDraft(journey.settings.backgrounds[e.target.value]))}>
             {Object.entries(PAGE_KEYS).map(([k, v]) => (
-              <option key={k} value={k}>{v}</option>
+              <option key={k} value={k}>{t(v)}</option>
             ))}
           </select>
         </Field>
       )}
       <div className="bg-preview">
-        {draft ? <BgLayer bg={draft} /> : <div className="bg-preview-empty">Nền gốc</div>}
-        {journey?.settings.theme === 'christmas-emerald' && key === 'home' && <div className="bg-preview-tree">🎄 Cây thông vẫn hiển thị phía trên ảnh</div>}
+        {draft ? <BgLayer bg={draft} /> : <div className="bg-preview-empty">{t('Nền gốc')}</div>}
+        {journey?.settings.theme === 'christmas-emerald' && key === 'home' && <div className="bg-preview-tree">{t('🎄 Cây thông vẫn hiển thị phía trên ảnh')}</div>}
       </div>
       <div className="stack">
-        <button className="btn" onClick={upload}>Chọn ảnh…</button>
-        {slider('Vị trí ngang (%)', 'posX', 0, 100, 1)}
-        {slider('Vị trí dọc (%)', 'posY', 0, 100, 1)}
-        {slider('Phóng to / cắt', 'zoom', 1, 2.5, 0.05)}
-        {slider('Độ tối', 'darken', 0, 0.8, 0.05)}
-        {slider('Độ mờ (px)', 'blur', 0, 12, 1)}
+        <button className="btn" onClick={upload}>{t('Chọn ảnh…')}</button>
+        {slider(t('Vị trí ngang (%)'), 'posX', 0, 100, 1)}
+        {slider(t('Vị trí dọc (%)'), 'posY', 0, 100, 1)}
+        {slider(t('Phóng to / cắt'), 'zoom', 1, 2.5, 0.05)}
+        {slider(t('Độ tối'), 'darken', 0, 0.8, 0.05)}
+        {slider(t('Độ mờ (px)'), 'blur', 0, 12, 1)}
         <div className="row gap">
-          <button className="btn ghost" onClick={() => (setDraft(undefined), save(undefined))}>Khôi phục nền gốc</button>
-          <button className="btn primary" disabled={!draft} onClick={() => save(draft)}>Lưu</button>
+          <button className="btn ghost" onClick={() => (setDraft(undefined), save(undefined))}>{t('Khôi phục nền gốc')}</button>
+          <button className="btn primary" disabled={!draft} onClick={() => save(draft)}>{t('Lưu')}</button>
         </div>
         {journey && key === 'home' && <RotateEditor journey={journey} />}
-        <p className="muted small">Ảnh gốc được lưu nguyên vẹn trong bộ nhớ của ứng dụng và có trong bản sao lưu.</p>
+        <p className="muted small">{t('Ảnh gốc được lưu nguyên vẹn trong bộ nhớ của ứng dụng và có trong bản sao lưu.')}</p>
       </div>
     </div>
   );
@@ -93,18 +94,18 @@ function RotateEditor({ journey }: { journey: Journey }) {
   };
   return (
     <div className="card">
-      <h3>Đổi ảnh nền theo ngày (tùy chọn)</h3>
-      <p className="muted small">Nếu có ảnh ở đây, Home sẽ dùng ảnh thứ N cho ngày thứ N của chuyến đi (thay cho ảnh nền chính).</p>
+      <h3>{t('Đổi ảnh nền theo ngày (tùy chọn)')}</h3>
+      <p className="muted small">{t('Nếu có ảnh ở đây, Home sẽ dùng ảnh thứ N cho ngày thứ N của chuyến đi (thay cho ảnh nền chính).')}</p>
       <div className="thumb-row">
         {ids.map((id, i) => (
           <div key={id} className="thumb-wrap">
             <BlobImg id={id} className="thumb" />
-            <span className="badge">N{i + 1}</span>
-            <button className="mini danger" aria-label="Bỏ ảnh" onClick={() => updateJourneySettings(journey.id, { rotateBackgrounds: ids.filter((x) => x !== id) })}>×</button>
+            <span className="badge">{t('N')}{i + 1}</span>
+            <button className="mini danger" aria-label={t('Bỏ ảnh')} onClick={() => updateJourneySettings(journey.id, { rotateBackgrounds: ids.filter((x) => x !== id) })}>×</button>
           </div>
         ))}
       </div>
-      <button className="btn small" onClick={add}>Thêm ảnh…</button>
+      <button className="btn small" onClick={add}>{t('Thêm ảnh…')}</button>
     </div>
   );
 }

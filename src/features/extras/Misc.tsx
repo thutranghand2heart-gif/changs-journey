@@ -5,20 +5,22 @@ import { Field, go, PageHeader, useStore } from '../../ui/core';
 import { useJourney } from '../journey/JourneyShell';
 import { search } from '../../lib/search';
 import { THEMES } from '../../lib/themes';
+import { LanguageList } from '../../ui/Language';
+import { t } from '../../lib/i18n';
 
 export function FeatureLibrary() {
   const { journey: j } = useJourney();
   const b = `/j/${j.id}`;
   const groups: [string, [string, string][]][] = [
-    ['Kỷ niệm', [['📖 Memory Book', `${b}/memories/book`], ['🖼️ Gallery', `${b}/memories/gallery`], ['⭐ Keepsakes', `${b}/memories/keepsakes`], ['✍️ Viết kỷ niệm', `${b}/memories/new`], ['💌 Bưu thiếp', `${b}/postcards`], ['⏳ Hộp thời gian', `${b}/capsules`], ['✨ Trang kết', `${b}/ending`], ['⬇️ Xuất kỷ niệm', `${b}/export`]]],
-    ['Chuyến đi', [['💰 Ngân sách', `${b}/budget`], ['🍜 Food Passport', `${b}/food`], ['🚕 Di chuyển', `${b}/transport`], ['⛅ Thời tiết & trang phục', `${b}/weather`], ['✅ Checklist', `${b}/checklist`], ['🛂 Thẻ nhập cảnh', `${b}/travel-doc`], ['🔎 Tìm kiếm', `${b}/search`]]],
-    ['Ngôn ngữ & an toàn', [['🈶 Trợ lý ngôn ngữ', `${b}/language`], ['🆘 Khẩn cấp', `${b}/emergency`]]],
-    ['Phép màu', [['🎄 Advent · Quả cầu tuyết · Xe tuần lộc', `${b}/magic`], ['🎨 Giao diện & ảnh nền', `${b}/appearance`]]],
-    ['Bảo vệ', [['🔒 Két riêng tư', '/vault'], ['🛡️ Sao lưu & khôi phục', '/backup'], ['📶 Sẵn sàng offline', `/offline?j=${j.id}`]]],
+    [t('Kỷ niệm'), [[t('📖 Memory Book'), `${b}/memories/book`], [t('🖼️ Gallery'), `${b}/memories/gallery`], [t('⭐ Keepsakes'), `${b}/memories/keepsakes`], [t('✍️ Viết kỷ niệm'), `${b}/memories/new`], [t('💌 Bưu thiếp'), `${b}/postcards`], [t('⏳ Hộp thời gian'), `${b}/capsules`], [t('✨ Trang kết'), `${b}/ending`], [t('⬇️ Xuất kỷ niệm'), `${b}/export`]]],
+    [t('Chuyến đi'), [[t('💰 Ngân sách'), `${b}/budget`], [t('🍜 Food Passport'), `${b}/food`], [t('🚕 Di chuyển'), `${b}/transport`], [t('⛅ Thời tiết & trang phục'), `${b}/weather`], [t('✅ Checklist'), `${b}/checklist`], [t('🛂 Thẻ nhập cảnh'), `${b}/travel-doc`], [t('🔎 Tìm kiếm'), `${b}/search`]]],
+    [t('Ngôn ngữ & an toàn'), [[t('🈶 Trợ lý ngôn ngữ'), `${b}/language`], [t('🆘 Khẩn cấp'), `${b}/emergency`]]],
+    [t('Phép màu'), [[t('🎄 Advent · Quả cầu tuyết · Xe tuần lộc'), `${b}/magic`], [t('🎨 Giao diện & ảnh nền'), `${b}/appearance`]]],
+    [t('Bảo vệ'), [[t('🔒 Két riêng tư'), '/vault'], [t('🛡️ Sao lưu & khôi phục'), '/backup'], [t('📶 Sẵn sàng offline'), `/offline?j=${j.id}`]]],
   ];
   return (
     <div className="page">
-      <PageHeader title="Thư viện tính năng" back={b} />
+      <PageHeader title={t('Thư viện tính năng')} back={b} />
       {groups.map(([g, items]) => (
         <section key={g} className="glass-card">
           <h3>{g}</h3>
@@ -48,9 +50,9 @@ export function SearchPage() {
   const KIND: Record<string, string> = { activity: '🗓️', day: '📖', place: '📍', food: '🍜', memory: '💭', document: '📄' };
   return (
     <div className="page">
-      <PageHeader title="Tìm kiếm" sub="Tiếng Việt, chữ Hán, pinyin (có hoặc không dấu)" back={`/j/${j.id}`} />
-      <input className="search-input" autoFocus placeholder="Tên địa điểm, chữ Hán hoặc pinyin…" value={q} onChange={(e: any) => setQ(e.target.value)} aria-label="Từ khóa" />
-      <p className="muted xsmall">Nội dung riêng tư và ngày tự do không xuất hiện trong kết quả.</p>
+      <PageHeader title={t('Tìm kiếm')} sub={t('Tiếng Việt, chữ Hán, pinyin (có hoặc không dấu)')} back={`/j/${j.id}`} />
+      <input className="search-input" autoFocus placeholder={t('Tên địa điểm, chữ Hán hoặc pinyin…')} value={q} onChange={(e: any) => setQ(e.target.value)} aria-label={t('Từ khóa')} />
+      <p className="muted xsmall">{t('Nội dung riêng tư và ngày tự do không xuất hiện trong kết quả.')}</p>
       <div className="stack-s">
         {hits.map((h) => (
           <button key={h.kind + h.id} className="list-row glass-card" onClick={() => open(h)}>
@@ -58,7 +60,7 @@ export function SearchPage() {
             <span className="grow text-left"><b>{h.title}</b><span className="muted xsmall block">{h.snippet}</span></span>
           </button>
         ))}
-        {q && !hits.length && <p className="muted center">Không có kết quả.</p>}
+        {q && !hits.length && <p className="muted center">{t('Không có kết quả.')}</p>}
       </div>
     </div>
   );
@@ -71,34 +73,39 @@ export function AppearancePage() {
   const [custom, setCustom] = useState(s.customColors ?? { bg: '#1d2b3a', accent: '#e0c38c', card: 'rgba(29,43,58,0.6)', text: '#fdf8f0' });
   return (
     <div className="page">
-      <PageHeader title="Giao diện" sub={`Chỉ áp dụng cho “${j.title}”`} back={`/j/${j.id}`} />
+      <PageHeader title={t('Giao diện')} sub={t('Chỉ áp dụng cho “{0}”', j.title)} back={`/j/${j.id}`} />
       <div className="stack">
-        <Field label="Chủ đề">
+        <section className="card">
+          <h4>🌐 {t('Ngôn ngữ giao diện')}</h4>
+          <LanguageList />
+          <p className="muted xsmall">{t('Áp dụng cho toàn bộ ứng dụng.')}</p>
+        </section>
+        <Field label={t('Chủ đề')}>
           <div className="theme-picker">
             {(Object.keys(THEMES) as (keyof typeof THEMES)[]).map((k) => (
               <button key={k} className={`theme-chip ${s.theme === k ? 'on' : ''}`} style={{ background: THEMES[k].bg2, color: THEMES[k].text, borderColor: THEMES[k].accent }} onClick={() => set({ theme: k as ThemeId })}>{THEMES[k].deco} {THEMES[k].name}</button>
             ))}
-            <button className={`theme-chip ${s.theme === 'custom' ? 'on' : ''}`} onClick={() => set({ theme: 'custom', customColors: custom })}>✨ Tùy chỉnh</button>
+            <button className={`theme-chip ${s.theme === 'custom' ? 'on' : ''}`} onClick={() => set({ theme: 'custom', customColors: custom })}>{t('✨ Tùy chỉnh')}</button>
           </div>
         </Field>
         {s.theme === 'custom' && (
           <div className="card row gap wrap">
             {(['bg', 'accent', 'text'] as const).map((k) => (
-              <Field key={k} label={{ bg: 'Nền', accent: 'Nhấn', text: 'Chữ' }[k]}><input type="color" value={custom[k]} onChange={(e: any) => { const c = { ...custom, [k]: e.target.value, card: k === 'bg' ? e.target.value + 'aa' : custom.card }; setCustom(c); set({ customColors: c }); }} /></Field>
+              <Field key={k} label={{ bg: t('Nền'), accent: t('Nhấn'), text: t('Chữ') }[k]}><input type="color" value={custom[k]} onChange={(e: any) => { const c = { ...custom, [k]: e.target.value, card: k === 'bg' ? e.target.value + 'aa' : custom.card }; setCustom(c); set({ customColors: c }); }} /></Field>
             ))}
           </div>
         )}
-        <Field label="Kiểu chữ">
-          <select value={s.fontStyle} onChange={(e: any) => set({ fontStyle: e.target.value })}><option value="storybook">Storybook (có chân)</option><option value="modern">Hiện đại</option><option value="handwritten">Viết tay</option></select>
+        <Field label={t('Kiểu chữ')}>
+          <select value={s.fontStyle} onChange={(e: any) => set({ fontStyle: e.target.value })}><option value="storybook">{t('Storybook (có chân)')}</option><option value="modern">{t('Hiện đại')}</option><option value="handwritten">{t('Viết tay')}</option></select>
         </Field>
-        <Field label="Hiệu ứng chuyển động">
-          <select value={s.animations} onChange={(e: any) => set({ animations: e.target.value })}><option value="full">Đầy đủ</option><option value="reduced">Nhẹ</option><option value="off">Tắt</option></select>
+        <Field label={t('Hiệu ứng chuyển động')}>
+          <select value={s.animations} onChange={(e: any) => set({ animations: e.target.value })}><option value="full">{t('Đầy đủ')}</option><option value="reduced">{t('Nhẹ')}</option><option value="off">{t('Tắt')}</option></select>
         </Field>
-        <label className="toggle-row"><input type="checkbox" checked={s.openingAnimation} onChange={(e: any) => set({ openingAnimation: e.target.checked })} /> Phần mở đầu khi vào chuyến đi</label>
-        <label className="toggle-row"><input type="checkbox" checked={s.decorations} onChange={(e: any) => set({ decorations: e.target.checked })} /> Trang trí (tuyết, đèn, hạt vàng)</label>
-        <p className="muted xsmall">Nhạc nền (giai điệu chuông nguyên bản do ứng dụng tự tổng hợp) luôn tắt khi mở ứng dụng và chỉ phát khi bạn bấm nút loa trên Home. Nhạc tự dừng khi đọc phát âm hoặc khi xem giấy tờ.</p>
-        <button className="btn" onClick={() => go(`/j/${j.id}/background`)}>🖼️ Ảnh nền cá nhân…</button>
-        <button className="btn ghost" onClick={() => go(`/j/${j.id}/edit`)}>✏️ Sửa thông tin chuyến đi</button>
+        <label className="toggle-row"><input type="checkbox" checked={s.openingAnimation} onChange={(e: any) => set({ openingAnimation: e.target.checked })} /> {' '}{t('Phần mở đầu khi vào chuyến đi')}</label>
+        <label className="toggle-row"><input type="checkbox" checked={s.decorations} onChange={(e: any) => set({ decorations: e.target.checked })} /> {' '}{t('Trang trí (tuyết, đèn, hạt vàng)')}</label>
+        <p className="muted xsmall">{t('Nhạc nền (giai điệu chuông nguyên bản do ứng dụng tự tổng hợp) luôn tắt khi mở ứng dụng và chỉ phát khi bạn bấm nút loa trên Home. Nhạc tự dừng khi đọc phát âm hoặc khi xem giấy tờ.')}</p>
+        <button className="btn" onClick={() => go(`/j/${j.id}/background`)}>{t('🖼️ Ảnh nền cá nhân…')}</button>
+        <button className="btn ghost" onClick={() => go(`/j/${j.id}/edit`)}>{t('✏️ Sửa thông tin chuyến đi')}</button>
       </div>
     </div>
   );

@@ -7,6 +7,8 @@ import { fmtShort } from '../../lib/time';
 import { useApp } from '../../ui/app-context';
 import { BgLayer } from '../journey/Background';
 import { BookMark } from '../../art/BookMark';
+import { LanguageButton } from '../../ui/Language';
+import { APP_VERSION } from '../../ui/UpdateNotice';
 
 export function GlobalHome() {
   const journeys = useStore<Journey>('journeys');
@@ -25,29 +27,30 @@ export function GlobalHome() {
             <h1 className="display">{t('appName')}</h1>
             <p className="muted small italic">{t('subtitle')}</p>
           </div>
+          <LanguageButton />
           <button className="icon-btn" aria-label={t('menu')} onClick={() => setMenu(true)}>
             <LuMenu size={22} />
           </button>
         </header>
 
         {!journeys.length && (
-          <section className="welcome glass-card" aria-label="Bắt đầu">
-            <h2 className="display">Chào mừng đến với cuốn nhật ký ✨</h2>
-            <p className="small">Nếu bạn đã có tệp hành trình riêng (ví dụ lưu trong ứng dụng Tệp), hãy nhập nó một lần. Mọi dữ liệu chỉ nằm trên iPhone này.</p>
-            <button className="btn primary big" onClick={() => go('/import')}><LuFileUp size={20} /> Nhập hành trình từ tệp</button>
+          <section className="welcome glass-card" aria-label={t('Bắt đầu')}>
+            <h2 className="display">{t('Chào mừng đến với cuốn nhật ký ✨')}</h2>
+            <p className="small">{t('Nếu bạn đã có tệp hành trình riêng (ví dụ lưu trong ứng dụng Tệp), hãy nhập nó một lần. Mọi dữ liệu chỉ nằm trên iPhone này.')}</p>
+            <button className="btn primary big" onClick={() => go('/import')}><LuFileUp size={20} /> {' '}{t('Nhập hành trình từ tệp')}</button>
           </section>
         )}
         <button className="add-journey" onClick={() => go('/new')}>
           <LuPlus size={22} /> {t('addJourney')}
         </button>
         {journeys.length > 0 && (
-          <button className="link-btn center" onClick={() => go('/import')}><LuFileUp size={14} /> Nhập hành trình từ tệp</button>
+          <button className="link-btn center" onClick={() => go('/import')}><LuFileUp size={14} /> {' '}{t('Nhập hành trình từ tệp')}</button>
         )}
 
         <h2 className="section-title">{t('myJourneys')}</h2>
         <div className="journey-list">
           {list.map((j) => (
-            <button key={j.id} className="journey-card" onClick={() => go(`/j/${j.id}`)} aria-label={`Mở ${j.title}`}>
+            <button key={j.id} className="journey-card" onClick={() => go(`/j/${j.id}`)} aria-label={t('Mở {0}', j.title)}>
               <div className="journey-cover">{j.settings.coverBlobId ? <BlobImg id={j.settings.coverBlobId} className="cover-img" /> : j.coverArt === 'xmas-skyline' ? <img src="./icons/xmas-skyline-emblem.svg" alt="" className="cover-img" /> : <span className="cover-emoji">{j.coverEmoji}</span>}</div>
               <div className="journey-meta">
                 <strong>{j.title}</strong>
@@ -56,28 +59,28 @@ export function GlobalHome() {
                   {fmtShort(j.startDate)} – {fmtShort(j.endDate)}/{j.endDate.slice(0, 4)}
                 </span>
               </div>
-              {j.pinned && <span className="pin" aria-label="Đã ghim"><LuPin size={16} /></span>}
+              {j.pinned && <span className="pin" aria-label={t('Đã ghim')}><LuPin size={16} /></span>}
             </button>
           ))}
-          {!list.length && <p className="muted center">Chưa có chuyến đi nào. Nhấn “{t('addJourney')}”.</p>}
+          {!list.length && <p className="muted center">{t('Chưa có chuyến đi nào. Nhấn “')}{t('addJourney')}”.</p>}
           {archivedCount > 0 && (
             <button className="link-btn" onClick={() => go('/library?f=archived')}>
-              {archivedCount} chuyến đi đã lưu trữ →
-            </button>
+              {archivedCount} {' '}{t('chuyến đi đã lưu trữ →')}</button>
           )}
         </div>
       </div>
 
-      <Sheet open={menu} onClose={() => setMenu(false)} title="Menu">
+      <p className="version-tag">{t('v')}{APP_VERSION}</p>
+      <Sheet open={menu} onClose={() => setMenu(false)} title={t('Menu')}>
         <nav className="menu-list">
-          <button onClick={() => go('/import')}><LuFileUp /> Nhập hành trình từ tệp</button>
-          <button onClick={() => go('/library')}><LuLibrary /> Thư viện hành trình</button>
-          <button onClick={() => go('/world')}><LuGlobe /> My Travel World</button>
-          <button onClick={() => go('/backup')}><LuShieldCheck /> Trung tâm bảo vệ kỷ niệm (sao lưu)</button>
-          <button onClick={() => go('/offline')}><LuWifiOff /> Kiểm tra sẵn sàng offline</button>
-          <button onClick={() => go('/vault')}><LuLock /> Két riêng tư</button>
-          <button onClick={() => go('/background/global')}><LuImage /> Ảnh nền trang chủ</button>
-          <button onClick={() => go('/settings')}><LuSettings /> Cài đặt</button>
+          <button onClick={() => go('/import')}><LuFileUp /> {' '}{t('Nhập hành trình từ tệp')}</button>
+          <button onClick={() => go('/library')}><LuLibrary /> {' '}{t('Thư viện hành trình')}</button>
+          <button onClick={() => go('/world')}><LuGlobe /> {' '}{t('My Travel World')}</button>
+          <button onClick={() => go('/backup')}><LuShieldCheck /> {' '}{t('Trung tâm bảo vệ kỷ niệm (sao lưu)')}</button>
+          <button onClick={() => go('/offline')}><LuWifiOff /> {' '}{t('Kiểm tra sẵn sàng offline')}</button>
+          <button onClick={() => go('/vault')}><LuLock /> {' '}{t('Két riêng tư')}</button>
+          <button onClick={() => go('/background/global')}><LuImage /> {' '}{t('Ảnh nền trang chủ')}</button>
+          <button onClick={() => go('/settings')}><LuSettings /> {' '}{t('Cài đặt')}</button>
         </nav>
       </Sheet>
     </div>

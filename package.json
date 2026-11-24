@@ -1,6 +1,6 @@
 {
   "name": "changs-journey",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "description": "Những bước chân của Chang — Every step has a story.",
@@ -25,5 +25,7 @@
     "tsx": "4.23.12",
     "typescript": "6.0.3"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

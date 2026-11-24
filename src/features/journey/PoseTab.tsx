@@ -5,8 +5,9 @@ import { db, saveFileAsBlob } from '../../db/repo';
 import { BlobImg, Confirm, Field, go, PageHeader, pickFiles, queryParam, Sheet, useStore, useToast } from '../../ui/core';
 import { useJourney } from './JourneyShell';
 import { uid } from '../../lib/util';
+import { t, tr } from '../../lib/i18n';
 
-export const POSE_CATS: Record<Pose['category'], string> = { hanfu: 'Hán phục', portrait: 'Chân dung', couple: 'Đôi (tự chọn)', street: 'Đường phố', night: 'Ban đêm', architecture: 'Kiến trúc', seasonal: 'Theo mùa' };
+export const POSE_CATS: Record<Pose['category'], string> = { hanfu: tr('Hán phục'), portrait: tr('Chân dung'), couple: tr('Đôi (tự chọn)'), street: tr('Đường phố'), night: tr('Ban đêm'), architecture: tr('Kiến trúc'), seasonal: tr('Theo mùa') };
 
 export function PoseTab() {
   const { journey: j, activities } = useJourney();
@@ -18,23 +19,23 @@ export function PoseTab() {
   const sel = poses.find((p) => p.id === open);
   return (
     <div className="page">
-      <PageHeader title="Pose Book" sub="Cảm hứng & kế hoạch chụp ảnh" right={<button className="icon-btn" aria-label="Thêm dáng" onClick={() => setCreating(true)}><LuPlus size={20} /></button>} />
+      <PageHeader title={t('Pose Book')} sub={t('Cảm hứng & kế hoạch chụp ảnh')} right={<button className="icon-btn" aria-label={t('Thêm dáng')} onClick={() => setCreating(true)}><LuPlus size={20} /></button>} />
       <div className="seg scroll-x">
-        <button className={cat === 'all' ? 'on' : ''} onClick={() => setCat('all')}>Tất cả</button>
-        <button className={cat === 'fav' ? 'on' : ''} onClick={() => setCat('fav')}>♥ Yêu thích</button>
-        {Object.entries(POSE_CATS).map(([k, l]) => <button key={k} className={cat === k ? 'on' : ''} onClick={() => setCat(k)}>{l}</button>)}
+        <button className={cat === 'all' ? 'on' : ''} onClick={() => setCat('all')}>{t('Tất cả')}</button>
+        <button className={cat === 'fav' ? 'on' : ''} onClick={() => setCat('fav')}>{t('♥ Yêu thích')}</button>
+        {Object.entries(POSE_CATS).map(([k, l]) => <button key={k} className={cat === k ? 'on' : ''} onClick={() => setCat(k)}>{t(l)}</button>)}
       </div>
       <div className="pose-grid">
         {list.map((p) => (
           <button key={p.id} className="pose-card glass-card" onClick={() => setOpen(p.id)}>
             {p.refBlobIds[0] ? <BlobImg id={p.refBlobIds[0]} className="pose-img" /> : <div className="pose-art" aria-hidden="true">{p.category === 'hanfu' ? '🏮' : p.category === 'night' ? '🌃' : p.category === 'architecture' ? '🏛️' : p.category === 'seasonal' ? '❄️' : p.category === 'street' ? '🚶' : p.category === 'couple' ? '🤍' : '📷'}</div>}
-            <span className="pose-cat">{POSE_CATS[p.category]}</span>
+            <span className="pose-cat">{t(POSE_CATS[p.category])}</span>
             <b>{p.title}</b>
             {p.favorite && <span className="fav"><LuHeart size={14} /></span>}
           </button>
         ))}
       </div>
-      {!list.length && <p className="muted center">Chưa có dáng nào trong mục này.</p>}
+      {!list.length && <p className="muted center">{t('Chưa có dáng nào trong mục này.')}</p>}
       {sel && <PoseSheet p={sel} acts={activities} onClose={() => setOpen(null)} />}
       {creating && (
         <PoseSheet
@@ -62,18 +63,18 @@ function PoseSheet({ p, acts, onClose, isNew }: { p: Pose; acts: Activity[]; onC
     }
   };
   return (
-    <Sheet open onClose={onClose} title={isNew ? 'Dáng mới' : p.title} full>
+    <Sheet open onClose={onClose} title={isNew ? t('Dáng mới') : p.title} full>
       <div className="stack">
-        <Field label="Tên"><input value={f.title} onChange={(e: any) => setF({ ...f, title: e.target.value })} /></Field>
-        <Field label="Nhóm">
-          <select value={f.category} onChange={(e: any) => setF({ ...f, category: e.target.value })}>{Object.entries(POSE_CATS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+        <Field label={t('Tên')}><input value={f.title} onChange={(e: any) => setF({ ...f, title: e.target.value })} /></Field>
+        <Field label={t('Nhóm')}>
+          <select value={f.category} onChange={(e: any) => setF({ ...f, category: e.target.value })}>{Object.entries(POSE_CATS).map(([k, l]) => <option key={k} value={k}>{t(l)}</option>)}</select>
         </Field>
-        <Field label="Mô tả"><textarea rows={3} value={f.description} onChange={(e: any) => setF({ ...f, description: e.target.value })} /></Field>
-        <Field label="Ghi chú cá nhân"><textarea rows={2} value={f.notes} onChange={(e: any) => setF({ ...f, notes: e.target.value })} /></Field>
-        <label className="toggle-row"><input type="checkbox" checked={f.favorite} onChange={(e: any) => setF({ ...f, favorite: e.target.checked })} /> ♥ Yêu thích</label>
+        <Field label={t('Mô tả')}><textarea rows={3} value={f.description} onChange={(e: any) => setF({ ...f, description: e.target.value })} /></Field>
+        <Field label={t('Ghi chú cá nhân')}><textarea rows={2} value={f.notes} onChange={(e: any) => setF({ ...f, notes: e.target.value })} /></Field>
+        <label className="toggle-row"><input type="checkbox" checked={f.favorite} onChange={(e: any) => setF({ ...f, favorite: e.target.checked })} /> {' '}{t('♥ Yêu thích')}</label>
         <div className="card">
-          <h4>Ảnh tham khảo của bạn</h4>
-          <p className="muted xsmall">Chỉ lưu trên thiết bị; không tự chia sẻ.</p>
+          <h4>{t('Ảnh tham khảo của bạn')}</h4>
+          <p className="muted xsmall">{t('Chỉ lưu trên thiết bị; không tự chia sẻ.')}</p>
           <div className="thumb-row">{f.refBlobIds.map((id) => <BlobImg key={id} id={id} className="thumb" />)}</div>
           <button
             className="btn small"
@@ -84,10 +85,9 @@ function PoseSheet({ p, acts, onClose, isNew }: { p: Pose; acts: Activity[]; onC
               setF({ ...f, refBlobIds: [...f.refBlobIds, ...ids] });
             }}
           >
-            <LuImage size={14} /> Thêm ảnh
-          </button>
+            <LuImage size={14} /> {' '}{t('Thêm ảnh')}</button>
         </div>
-        <Field label="Liên kết với hoạt động">
+        <Field label={t('Liên kết với hoạt động')}>
           <div className="check-list">
             {acts.filter((a) => a.kind === 'sight' || a.kind === 'photo').map((a) => (
               <label key={a.id} className="toggle-row small">
@@ -106,11 +106,11 @@ function PoseSheet({ p, acts, onClose, isNew }: { p: Pose; acts: Activity[]; onC
           </div>
         )}
         <div className="row gap">
-          {!isNew && <button className="btn danger ghost" onClick={() => setDel(true)}>Xóa</button>}
-          <button className="btn primary" disabled={!f.title.trim()} onClick={async () => (await save(), toast('Đã lưu'), onClose())}>Lưu</button>
+          {!isNew && <button className="btn danger ghost" onClick={() => setDel(true)}>{t('Xóa')}</button>}
+          <button className="btn primary" disabled={!f.title.trim()} onClick={async () => (await save(), toast(t('Đã lưu')), onClose())}>{t('Lưu')}</button>
         </div>
       </div>
-      <Confirm open={del} danger title="Xóa dáng này?" body={p.title} onConfirm={async () => (await save({ ...f, activityIds: [] }), await db.del('poses', p.id), onClose())} onClose={() => setDel(false)} />
+      <Confirm open={del} danger title={t('Xóa dáng này?')} body={p.title} onConfirm={async () => (await save({ ...f, activityIds: [] }), await db.del('poses', p.id), onClose())} onClose={() => setDel(false)} />
     </Sheet>
   );
 }

@@ -1,5 +1,6 @@
 import type { Activity, FoodEntry, Memory, Place, WalletDoc, Day } from '../db/schema';
 import { fold } from './util';
+import { t } from './i18n';
 
 export interface SearchHit { kind: 'activity' | 'place' | 'food' | 'memory' | 'document' | 'day'; id: string; title: string; snippet: string; dayId?: string }
 
@@ -33,7 +34,7 @@ export function search(corpus: SearchCorpus, query: string): SearchHit[] {
   }
   for (const d of corpus.days) {
     if (d.freeDay) continue; // free day stays uncluttered & private
-    if (matches(hay(d.title, d.subtitle, d.notes), q)) hits.push({ kind: 'day', id: d.id, title: `Ngày ${d.index}: ${d.title}`, snippet: d.subtitle ?? '', dayId: d.id });
+    if (matches(hay(d.title, d.subtitle, d.notes), q)) hits.push({ kind: 'day', id: d.id, title: t('Ngày {0}: {1}', d.index, d.title), snippet: d.subtitle ?? '', dayId: d.id });
   }
   for (const a of corpus.activities) {
     const p = a.placeId ? placeById.get(a.placeId) : undefined;
@@ -44,7 +45,7 @@ export function search(corpus: SearchCorpus, query: string): SearchHit[] {
     if (matches(hay(f.dish, f.place, f.city, f.notes, f.address), q)) hits.push({ kind: 'food', id: f.id, title: f.dish, snippet: [f.place, f.city].filter(Boolean).join(' · ') });
   }
   for (const m of publicMemories(corpus.memories)) {
-    if (matches(hay(m.title, m.body), q)) hits.push({ kind: 'memory', id: m.id, title: m.title || 'Kỷ niệm', snippet: m.body.slice(0, 80), dayId: m.dayId });
+    if (matches(hay(m.title, m.body), q)) hits.push({ kind: 'memory', id: m.id, title: m.title || t('Kỷ niệm'), snippet: m.body.slice(0, 80), dayId: m.dayId });
   }
   for (const d of publicDocs(corpus.docs)) {
     // documents: title + category only (booking details are not shown as snippets)
