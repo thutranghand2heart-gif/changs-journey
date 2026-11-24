@@ -11,6 +11,7 @@ import { paidOf } from '../../lib/budget';
 import { speak, speechSupported } from '../../lib/speech';
 import { t } from '../../lib/i18n';
 import { OriginalToggle, Tx } from '../../ui/contentTx';
+import { PlaceEditor } from './PlaceEditor';
 
 export function ActivitySheet({ a, onClose }: { a: Activity; onClose: () => void }) {
   const { journey: j, places, days } = useJourney();
@@ -20,6 +21,7 @@ export function ActivitySheet({ a, onClose }: { a: Activity; onClose: () => void
   const exps = useStore<Expense>('expenses', j.id).filter((e) => e.activityId === a.id);
   const place = places.find((p) => p.id === a.placeId);
   const [editing, setEditing] = useState(false);
+  const [editPlace, setEditPlace] = useState(false);
   const day = days.find((d) => d.id === a.dayId)!;
   const addr = place?.addressZh;
 
@@ -38,12 +40,14 @@ export function ActivitySheet({ a, onClose }: { a: Activity; onClose: () => void
   };
 
   if (editing) return <ActivityEditor day={day} a={a} onClose={() => setEditing(false)} />;
+  if (editPlace && place) return <PlaceEditor place={place} onClose={() => setEditPlace(false)} />;
   return (
     <Sheet open onClose={onClose} title={<Tx s="activities" r={a} f="title" />}>
       <div className="stack act-detail">
         <div className="act-time">
           {a.start ? <b>{a.approxTime ? t('Khoảng ') : ''}{a.start}{a.end ? ` – ${a.end}` : ''}</b> : <span>{t('Thời gian linh hoạt')}</span>}
           <span className="tz-badge">{t(a.timeZoneLabel ?? a.timeZone)}</span>
+          <button className="icon-btn" aria-label={t('Sửa giờ & địa điểm')} data-testid="act-edit-top" onClick={() => setEditing(true)}><LuPencil size={16} /></button>
         </div>
         <div className="row gap-s wrap">
           <span className={`status-pill s-${a.status}`}>{t(STATUS_LABEL[a.status])}</span>
@@ -58,7 +62,12 @@ export function ActivitySheet({ a, onClose }: { a: Activity; onClose: () => void
             {speechSupported() && <button className="btn small ghost" onClick={async () => !(await speak(a.nameZh!)) && toast(t('Thiết bị không phát được giọng tiếng Trung'), 'warn')}><LuVolume2 size={14} /> {' '}{t('Nghe')}</button>}
           </div>
         )}
-        {a.descriptionVi && <p><Tx s="activities" r={a} f="descriptionVi" /></p>}
+        {a.descriptionVi && (
+          <div className="card user-text" data-testid="act-desc">
+            <h4>{t('Mô tả')}</h4>
+            <p className="selectable"><Tx s="activities" r={a} f="descriptionVi" /></p>
+          </div>
+        )}
         {place && (
           <div className="card">
             <p><LuMapPin size={14} /> <b><Tx s="places" r={place} f="name" /></b>{place.nameZh && <span className="zh"> · {place.nameZh}</span>}</p>
@@ -69,11 +78,17 @@ export function ActivitySheet({ a, onClose }: { a: Activity; onClose: () => void
               <a className="btn small" href={amapUrl(place)} target="_blank" rel="noopener noreferrer"><LuNavigation size={14} /> {' '}{t('Mở Amap 高德')}</a>
               <a className="btn small ghost" href={appleMapsUrl(place)} target="_blank" rel="noopener noreferrer">{t('Apple Maps')}</a>
               <button className="btn small ghost" onClick={() => go(`/j/${j.id}/map?p=${place.id}`)}>{t('Xem trên Map')}</button>
+              <button className="btn small ghost" data-testid="place-edit" onClick={() => setEditPlace(true)}><LuPencil size={14} /> {' '}{t('Sửa địa điểm')}</button>
             </div>
             <p className="muted xsmall">{t('Dẫn đường cần Internet và ứng dụng/dịch vụ bên ngoài.')}</p>
           </div>
         )}
-        {a.notes && <p className="note">📝 <Tx s="activities" r={a} f="notes" /></p>}
+        {a.notes && (
+          <div className="card user-text" data-testid="act-notes">
+            <h4>📝 {t('Ghi chú')}</h4>
+            <p className="selectable"><Tx s="activities" r={a} f="notes" /></p>
+          </div>
+        )}
 
         {exps.length > 0 && (
           <div className="card">
@@ -110,7 +125,7 @@ export function ActivitySheet({ a, onClose }: { a: Activity; onClose: () => void
             <button className="btn small ghost" onClick={() => db.put('activities', { ...a, status: 'tentative' })}>{t('Bỏ đánh dấu xong')}</button>
           )}
           <button className="btn small ghost" onClick={() => go(`/j/${j.id}/memories/new?day=${a.dayId}`)}><LuCamera size={14} /> {' '}{t('Viết kỷ niệm')}</button>
-          <button className="btn small ghost" onClick={() => setEditing(true)}><LuPencil size={14} /> {' '}{t('Sửa')}</button>
+          <button className="btn small ghost" onClick={() => setEditing(true)}><LuPencil size={14} /> {' '}{t('Sửa giờ & địa điểm')}</button>
         </div>
       </div>
     </Sheet>

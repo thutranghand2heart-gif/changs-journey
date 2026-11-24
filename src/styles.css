@@ -463,3 +463,6 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 .travel-doc .itin-day { margin: 6px 0; }
 .travel-doc .itin-day b { display: inline-block; min-width: 5.5em; }
 .tx-nudge { display: flex; align-items: center; gap: 10px; margin: 8px 0 12px; padding: 10px 12px; }
+.card.user-text h4 { margin: 0 0 6px; font-size: 0.9rem; color: var(--muted); font-weight: 600; }
+.card.user-text p { margin: 0; white-space: pre-wrap; line-height: 1.55; }
+.act-time .icon-btn { margin-left: auto; }

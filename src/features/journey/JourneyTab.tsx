@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { LuPlus, LuPencil, LuLock, LuTrash2 } from 'react-icons/lu';
 import type { Activity, ActivityStatus, Day } from '../../db/schema';
-import { db, deleteActivity } from '../../db/repo';
+import { db, deleteActivity, updateJourney } from '../../db/repo';
 import { Confirm, Field, go, PageHeader, queryParam, Sheet, useToast } from '../../ui/core';
 import { useJourney } from './JourneyShell';
 import { fmtDateVi, fmtShort, addDays, tzLabel } from '../../lib/time';
@@ -9,6 +9,7 @@ import { uid } from '../../lib/util';
 import { ActivitySheet } from './ActivitySheet';
 import { t, tr } from '../../lib/i18n';
 import { Tx } from '../../ui/contentTx';
+import { PlaceEditor } from './PlaceEditor';
 
 export const STATUS_LABEL: Record<ActivityStatus, string> = { draft: tr('Nháp'), tentative: tr('Dự kiến'), booked: tr('Đã đặt'), completed: tr('Đã xong'), cancelled: tr('Đã hủy') };
 
@@ -137,7 +138,19 @@ function Timeline({ acts, onOpen, placeName }: { acts: Activity[]; onOpen: (id: 
 }
 
 function DayEditor({ day, onClose }: { day: Day; onClose: () => void }) {
-  const [f, setF] = useState({ title: day.title, subtitle: day.subtitle ?? '', notes: day.notes, freeDay: day.freeDay });
+  const { journey: j, days } = useJourney();
+  const saveDay = async () => {
+    await db.put('days', { ...day, ...f });
+    if (f.date !== day.date) {
+      // keep "Ngày 1, 2, 3…" in date order and widen the trip dates if needed
+      const all = days.map((d) => (d.id === day.id ? { ...d, ...f } : d)).sort((a, b) => a.date.localeCompare(b.date) || a.index - b.index);
+      for (const [i, d] of all.entries()) if (d.index !== i + 1) await db.put('days', { ...d, index: i + 1 });
+      const start = all[0]?.date, end = all[all.length - 1]?.date;
+      if (start && end && (start < j.startDate || end > j.endDate)) await updateJourney(j.id, { startDate: start < j.startDate ? start : j.startDate, endDate: end > j.endDate ? end : j.endDate });
+    }
+    onClose();
+  };
+  const [f, setF] = useState({ title: day.title, subtitle: day.subtitle ?? '', notes: day.notes, freeDay: day.freeDay, date: day.date });
   return (
     <Sheet open onClose={onClose} title={t('Sửa Ngày {0}', day.index)}>
       <div className="stack">
@@ -145,16 +158,17 @@ function DayEditor({ day, onClose }: { day: Day; onClose: () => void }) {
         <Field label={t('Phụ đề')}><input value={f.subtitle} onChange={(e: any) => setF({ ...f, subtitle: e.target.value })} /></Field>
         <Field label={t('Ghi chú')}><textarea rows={3} value={f.notes} onChange={(e: any) => setF({ ...f, notes: e.target.value })} /></Field>
         <label className="toggle-row"><input type="checkbox" checked={f.freeDay} onChange={(e: any) => setF({ ...f, freeDay: e.target.checked })} /> {' '}{t('Ngày tự do (không nhắc nhở)')}</label>
-        <p className="muted small">{t('Ngày:')}{' '}{fmtShort(day.date)} {' '}{t('— ngày tháng được giữ cố định theo lịch trình.')}</p>
-        <button className="btn primary" onClick={async () => (await db.put('days', { ...day, ...f }), onClose())}>{t('Lưu')}</button>
+        <Field label={t('Ngày tháng')} hint={t('Các hoạt động của ngày này đi theo ngày mới.')}><input type="date" value={f.date} onChange={(e: any) => e.target.value && setF({ ...f, date: e.target.value })} /></Field>
+        <button className="btn primary" onClick={saveDay}>{t('Lưu')}</button>
       </div>
     </Sheet>
   );
 }
 
 export function ActivityEditor({ day, a, onClose }: { day: Day; a?: Activity; onClose: () => void }) {
-  const { journey: j, activities, places } = useJourney();
+  const { journey: j, activities, places, days } = useJourney();
   const toast = useToast();
+  const [editPlace, setEditPlace] = useState(false);
   const [f, setF] = useState<Activity>(
     a ?? {
       id: uid('a'), journeyId: j.id, dayId: day.id, order: (Math.max(0, ...activities.map((x) => x.order)) + 1), title: '', timeZone: j.timeZone, timeZoneLabel: tzLabel(j.timeZone), notes: '',
@@ -168,6 +182,11 @@ export function ActivityEditor({ day, a, onClose }: { day: Day; a?: Activity; on
     <Sheet open onClose={onClose} title={a ? t('Sửa hoạt động') : t('Hoạt động mới')} full>
       <div className="stack">
         <Field label={t('Tên hoạt động')}><input value={f.title} onChange={(e: any) => setF({ ...f, title: e.target.value })} /></Field>
+        <Field label={t('Ngày')}>
+          <select data-testid="act-day" value={f.dayId} onChange={(e: any) => setF({ ...f, dayId: e.target.value })}>
+            {days.map((d) => <option key={d.id} value={d.id}>{t('Ngày {0}', d.index)} · {fmtShort(d.date)}</option>)}
+          </select>
+        </Field>
         <div className="row gap">
           <Field label={t('Bắt đầu')}><input type="time" value={f.start ?? ''} onChange={set('start')} /></Field>
           <Field label={t('Kết thúc')}><input type="time" value={f.end ?? ''} onChange={set('end')} /></Field>
@@ -197,6 +216,10 @@ export function ActivityEditor({ day, a, onClose }: { day: Day; a?: Activity; on
             {places.map((p) => <option key={p.id} value={p.id}>{p.name}{p.nameZh ? ` · ${p.nameZh}` : ''}</option>)}
           </select>
         </Field>
+        {f.placeId && places.find((p) => p.id === f.placeId) && (
+          <button className="btn small ghost" onClick={() => setEditPlace(true)}><LuPencil size={14} /> {' '}{t('Sửa thông tin địa điểm này (tên, địa chỉ…)')}</button>
+        )}
+        {editPlace && <PlaceEditor place={places.find((p) => p.id === f.placeId)!} onClose={() => setEditPlace(false)} />}
         {!f.placeId && (
           <details className="card">
             <summary>{t('+ Tạo địa điểm mới')}</summary>

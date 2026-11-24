@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { LuCopy, LuNavigation, LuFootprints, LuPlus, LuStar } from 'react-icons/lu';
+import { LuCopy, LuNavigation, LuFootprints, LuPlus, LuStar, LuPencil } from 'react-icons/lu';
 import type { Place } from '../../db/schema';
 import { db } from '../../db/repo';
 import { Field, go, PageHeader, queryParam, Sheet, useToast } from '../../ui/core';
@@ -8,6 +8,7 @@ import { copyText, nowIso, uid } from '../../lib/util';
 import { amapUrl } from '../../lib/maps';
 import { t } from '../../lib/i18n';
 import { OriginalToggle, Tx } from '../../ui/contentTx';
+import { PlaceEditor } from './PlaceEditor';
 
 export function MapTab() {
   const { journey: j, places, activities } = useJourney();
@@ -16,6 +17,7 @@ export function MapTab() {
   const focus = queryParam('p');
   const [city, setCity] = useState<string>(() => places.find((p) => p.id === focus)?.city ?? cities[0] ?? '');
   const [sel, setSel] = useState<string | null>(focus);
+  const [editing, setEditing] = useState<Place | null>(null);
   const [adding, setAdding] = useState(false);
   const inCity = places.filter((p) => p.city === city);
   const selected = places.find((p) => p.id === sel);
@@ -75,17 +77,24 @@ export function MapTab() {
         ))}
       </div>
 
-      <Sheet open={!!selected} onClose={() => setSel(null)} title={selected ? <Tx s="places" r={selected} f="name" /> : undefined}>
+      {editing && <PlaceEditor place={editing} onClose={() => setEditing(null)} />}
+      <Sheet open={!!selected && !editing} onClose={() => setSel(null)} title={selected ? <Tx s="places" r={selected} f="name" /> : undefined}>
         {selected && (
           <div className="stack">
             {selected.nameZh && <p className="zh big-zh" lang="zh-CN">{selected.nameZh}</p>}
             {selected.addressZh && <p className="zh selectable" lang="zh-CN">{selected.addressZh}</p>}
             {selected.addressEn && <p className="small muted">{selected.addressEn}</p>}
             <OriginalToggle s="places" r={selected} fields={['name', 'notes']} />
-            {selected.notes && <p className="small">📝 <Tx s="places" r={selected} f="notes" /></p>}
+            {selected.notes && (
+              <div className="card user-text">
+                <h4>📝 {t('Ghi chú')}</h4>
+                <p className="selectable"><Tx s="places" r={selected} f="notes" /></p>
+              </div>
+            )}
             <div className="row gap-s wrap">
               {selected.addressZh && <button className="btn small" onClick={async () => toast((await copyText(selected.addressZh!)) ? t('Đã sao chép địa chỉ') : t('Không sao chép được'), 'ok')}><LuCopy size={14} /> {' '}{t('Sao chép địa chỉ')}</button>}
               <a className="btn small" href={amapUrl(selected)} target="_blank" rel="noopener noreferrer"><LuNavigation size={14} /> {' '}{t('Amap 高德')}</a>
+              <button className="btn small ghost" onClick={() => setEditing(selected)}><LuPencil size={14} /> {' '}{t('Sửa địa điểm')}</button>
               <button className="btn small ghost" onClick={() => stamp(selected)}><LuFootprints size={14} /> {selected.visitedAt ? t('Bỏ dấu chân') : t('Đóng dấu đã đến')}</button>
             </div>
             {actsAt(selected.id).length > 0 && (
