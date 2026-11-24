@@ -2,7 +2,7 @@
 // and belongs to exactly one store. Views (Wallet, Budget, Food, Map…) reference
 // ids instead of copying records.
 
-export const SCHEMA_VERSION = 3; // v2 (app 1.0.1): attachments store, canonical booking records · v3 (1.0.2): content translations
+export const SCHEMA_VERSION = 4; // v4 (1.2): storybook pages · v2 (app 1.0.1): attachments store, canonical booking records · v3 (1.0.2): content translations
 export const BACKUP_FORMAT = 'chang-journey-backup';
 export const BACKUP_FORMAT_VERSION = 1;
 export const IMPORT_FORMAT = 'chang-journey-import';
@@ -42,7 +42,9 @@ export interface JourneySettings {
   backgrounds: Record<string, BackgroundSetting | undefined>; // key: 'home' | page key
   rotateBackgrounds: ID[]; // optional per-day rotation blob ids for home
   coverBlobId?: ID;
-  countdownStickerBlobId?: ID; // personal countdown sleigh sticker (local only, original PNG kept as imported)
+  countdownStickerBlobId?: ID;
+  treeArt?: { scale?: number; dx?: number; dy?: number };
+  poseAlbums?: string[]; // user-created Pose Book albums // position/size of the official tree artwork on Home // personal countdown sleigh sticker (local only, original PNG kept as imported)
   exchangeRates?: { KRW?: ManualRate; VND?: ManualRate };
 }
 export interface ManualRate { perUnit: number; enteredAt: string; note?: string }
@@ -278,6 +280,8 @@ export interface Pose {
   refBlobIds: ID[];
   activityIds: ID[];
   builtin: boolean;
+  album?: string; // V1.2 pose albums (built-in or user-created names)
+  placeId?: ID;
   // optional written guidance (V1.1)
   hands?: string;
   body?: string;
@@ -300,7 +304,13 @@ export interface Capsule {
   createdAt: string;
 }
 
-export interface Postcard { id: ID; journeyId: ID; blobId: ID; message: string; createdAt: string }
+export interface Postcard {
+  id: ID; journeyId: ID; blobId?: ID; message: string; createdAt: string;
+  // V1.2 template postcards (layered, editable drafts; artwork referenced by asset id, never copied)
+  templateId?: string; layers?: any[]; updatedAt?: string; draft?: boolean;
+}
+/** A Storybook page: background artwork + independent editable layers (text, photos, stickers). */
+export interface StoryPage { id: ID; journeyId: ID; index: number; bgAssetId: string; layers: any[]; createdAt: string; updatedAt: string }
 
 export interface BlobRecord { id: ID; journeyId?: ID; mime: string; name: string; size: number; data: Blob | ArrayBuffer; encrypted?: { iv: string }; createdAt: string }
 
@@ -347,7 +357,7 @@ export interface BackupLog { id: ID; createdAt: string; fileName: string; sha256
 
 export const STORES = [
   'journeys', 'days', 'activities', 'places', 'docs', 'expenses', 'memories', 'food', 'poses',
-  'checklist', 'capsules', 'postcards', 'blobs', 'world', 'weather', 'settings', 'attachments', 'translations',
+  'checklist', 'capsules', 'postcards', 'blobs', 'world', 'weather', 'settings', 'attachments', 'translations', 'storypages',
 ] as const;
 
 export type UiLang = 'vi' | 'zh' | 'en' | 'ko';

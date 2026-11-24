@@ -11,8 +11,10 @@ import { LanguageButton } from '../../ui/Language';
 import { APP_VERSION } from '../../ui/UpdateNotice';
 import { Tx } from '../../ui/contentTx';
 import { TxNudge } from '../../ui/contentTx';
+import { useArtUrl } from '../../ui/art';
 
 export function GlobalHome() {
+  const coverUrl = useArtUrl('cover', 'thumb');
   const journeys = useStore<Journey>('journeys');
   const { settings } = useApp();
   const [menu, setMenu] = useState(false);
@@ -54,7 +56,7 @@ export function GlobalHome() {
         <div className="journey-list">
           {list.map((j) => (
             <button key={j.id} className="journey-card" onClick={() => go(`/j/${j.id}`)} aria-label={t('Mở {0}', j.title)}>
-              <div className="journey-cover">{j.settings.coverBlobId ? <BlobImg id={j.settings.coverBlobId} className="cover-img" /> : j.coverArt === 'xmas-skyline' ? <img src="./icons/xmas-skyline-emblem.svg" alt="" className="cover-img" /> : <span className="cover-emoji">{j.coverEmoji}</span>}</div>
+              <div className="journey-cover">{j.settings.coverBlobId ? <BlobImg id={j.settings.coverBlobId} className="cover-img" /> : j.settings.theme === 'christmas-emerald' && coverUrl ? <img src={coverUrl} alt="" className="cover-img cover-book" data-testid="card-cover" /> : j.coverArt === 'xmas-skyline' ? <img src="./icons/xmas-skyline-emblem.svg" alt="" className="cover-img" /> : <span className="cover-emoji">{j.coverEmoji}</span>}</div>
               <div className="journey-meta">
                 <strong><Tx s="journeys" r={j} f="title" /></strong>
                 <span className="muted small">{j.destinations.join(' · ')}</span>

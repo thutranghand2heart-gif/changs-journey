@@ -10,11 +10,14 @@ import { publicMemories } from '../../lib/search';
 import { useApp } from '../../ui/app-context';
 import { locale, t } from '../../lib/i18n';
 import { OriginalToggle, Tx, useCt } from '../../ui/contentTx';
+import { useArtUrl } from '../../ui/art';
+import { LuFrame } from 'react-icons/lu';
 
 export function MemoriesHub({ view = 'book' }: { view?: string }) {
   const { journey: j, days } = useJourney();
   const mems = useStore<Memory>('memories', j.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const base = `/j/${j.id}/memories`;
+  const coverUrl = useArtUrl('cover', 'thumb');
   return (
     <div className="page">
       <PageHeader title={t('Kỷ niệm')} sub={t('Memory Book · Gallery · Keepsakes')} back={`/j/${j.id}`} right={<button className="icon-btn" aria-label={t('Viết kỷ niệm')} onClick={() => go(`${base}/new`)}><LuPlus size={20} /></button>} />
@@ -29,7 +32,12 @@ export function MemoriesHub({ view = 'book' }: { view?: string }) {
         <button className="btn small ghost" onClick={() => go(`/j/${j.id}/capsules`)}><LuHourglass size={14} /> {' '}{t('Hộp thời gian')}</button>
         <button className="btn small ghost" onClick={() => go(`/j/${j.id}/export`)}><LuDownload size={14} /> {' '}{t('Xuất kỷ niệm')}</button>
         <button className="btn small ghost" onClick={() => go(`/j/${j.id}/ending`)}>{t('✨ Trang kết')}</button>
+        <button className="btn small ghost" data-testid="open-storybook" onClick={() => go(`/j/${j.id}/storybook`)}><LuBookOpen size={14} /> {' '}{t('Storybook')}</button>
+        <button className="btn small ghost" onClick={() => go(`/j/${j.id}/frames`)}><LuFrame size={14} /> {' '}{t('Khung ảnh')}</button>
       </div>
+      {view === 'book' && coverUrl && j.settings.theme === 'christmas-emerald' && (
+        <button className="memory-book-cover" onClick={() => go(`/j/${j.id}/storybook`)} aria-label={t('Storybook')}><img src={coverUrl} alt="" /></button>
+      )}
       {view === 'book' && (
         <div className="memory-book">
           {days.map((d) => {

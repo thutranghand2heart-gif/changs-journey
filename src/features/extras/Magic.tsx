@@ -7,6 +7,8 @@ import { todayIn } from '../../lib/time';
 import { updateJourneySettings } from '../../db/repo';
 import { t, tr } from '../../lib/i18n';
 import { Tx } from '../../ui/contentTx';
+import { SnowGlobeArt } from '../../art/SnowGlobeArt';
+import { useArtUrl } from '../../ui/art';
 
 const DEFAULT_ADVENT = [
   tr('Một tách trà nóng là khởi đầu của mọi câu chuyện.'), tr('Viết ra ba điều bạn mong chờ ở chuyến đi.'), tr('Chọn một chiếc khăn quàng thật ấm.'), tr('Tập nói: 圣诞快乐 — Shèngdàn kuàilè!'),
@@ -23,6 +25,7 @@ export function MagicPage() {
   const [door, setDoor] = useState<number | null>(null);
   const [opened, setOpened] = useState<number[]>(() => { try { return JSON.parse(localStorage.getItem(`advent-${j.id}`) ?? '[]'); } catch { return []; } });
   const [sleigh, setSleigh] = useState(0);
+  const globeUrl = useArtUrl('globe', 'thumb');
   const [shake, setShake] = useState(0);
   const today = todayIn(j.timeZone);
   const year = j.startDate.slice(0, 4);
@@ -49,6 +52,7 @@ export function MagicPage() {
 
       <section className="glass-card">
         <h3 className="display">{t('Quả cầu tuyết')}{' '}{j.destinations[0] ?? ''}</h3>
+        {globeUrl ? <SnowGlobeArt reduced={reduced} /> : <>
         <button className="snowglobe" onClick={() => setShake((s) => s + 1)} aria-label={t('Lắc quả cầu tuyết')}>
           <svg viewBox="0 0 200 220" aria-hidden="true">
             <defs>
@@ -75,6 +79,7 @@ export function MagicPage() {
           </svg>
         </button>
         <p className="muted xsmall center">{t('Chạm để lắc.')}</p>
+        </>}
       </section>
 
       <section className="glass-card">

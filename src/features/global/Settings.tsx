@@ -26,6 +26,7 @@ export function SettingsPage() {
           <LanguageList />
           <p className="xsmall muted">{t('Ngôn ngữ giao diện không tự dịch nội dung bạn tự nhập.')}</p>
           <button className="btn small" data-testid="open-translate" onClick={() => (location.hash = '#/translate')}>{t('Dịch nội dung bạn nhập (4 ngôn ngữ)')}</button>
+          <button className="btn small" data-testid="open-artwork" onClick={() => (location.hash = '#/artwork')}>{t('Artwork (Christmas Collection)')}</button>
         </section>
         <Field label={t('Giảm chuyển động')}>
           <select value={settings.reducedMotion} onChange={(e: any) => saveSettings({ reducedMotion: e.target.value })}>

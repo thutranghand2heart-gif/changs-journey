@@ -6,6 +6,9 @@ import { AppCtx } from './ui/app-context';
 import { UpdateNotice } from './ui/UpdateNotice';
 import { AutoTranslate, ContentTxProvider } from './ui/contentTx';
 import { TranslatePage } from './features/global/Translate';
+import { ArtworkPage } from './features/global/Artwork';
+import { StorybookPage } from './features/memories/Storybook';
+import { FramesPage } from './features/memories/Frames';
 import { go, ToastHost, useLive, useRoute } from './ui/core';
 import * as db from './db/idb';
 import { setLang, t } from './lib/i18n';
@@ -108,6 +111,8 @@ function Router() {
       return <ImportJourneyPage />;
     case 'translate':
       return <TranslatePage />;
+    case 'artwork':
+      return <ArtworkPage />;
     case 'background':
       return <BackgroundEditor back="/" />;
     case 'j':
@@ -143,6 +148,10 @@ function JourneyRoute({ c, d, e }: { c?: string; d?: string; e?: string }) {
       return <MemoriesHub />;
     case 'postcards':
       return <PostcardStudio />;
+    case 'storybook':
+      return <StorybookPage />;
+    case 'frames':
+      return <FramesPage />;
     case 'capsules':
       return <Capsules />;
     case 'ending':

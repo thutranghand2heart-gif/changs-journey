@@ -6,6 +6,7 @@ import { PageHeader, queryParam } from '../../ui/core';
 import { useApp } from '../../ui/app-context';
 import { PHRASES } from '../../lib/phrases';
 import { locale, t } from '../../lib/i18n';
+import { artBlob, getArtwork } from '../../lib/artwork';
 
 type Status = 'ok' | 'missing' | 'warn' | 'na';
 interface Row { label: string; status: Status; detail: string }
@@ -43,6 +44,25 @@ async function check(journeyId: string | null): Promise<Row[]> {
     rows.push({ label: t('{0}: vé & giấy tờ đã nhập', j.title), status: !atts.length ? 'warn' : bad.length ? 'missing' : 'ok', detail: !atts.length ? t('Chưa nhập tệp vé/QR gốc nào.') : bad.length ? t('Không đọc được: {0}', bad.join(', ')) : t('{0}/{1} tệp gốc đọc được ({2} đã từng mở thành công)', readable, atts.length, atts.filter((a) => a.lastOpenedOkAt).length) });
     const ck = await db.getAll('checklist', j.id);
     rows.push({ label: `${j.title}: checklist`, status: ck.length ? 'ok' : 'warn', detail: t('{0} mục', ck.length) });
+  }
+  // 3. Artwork (Christmas Collection) — every file is actually read back before it counts as ready
+  {
+    const art = await getArtwork();
+    const list = Object.values(art.assets);
+    if (list.length) {
+      let okN = 0;
+      const bad: string[] = [];
+      for (const a of list) {
+        const r = await readBlob(artBlob(a, 'disp')!);
+        if (r && r.blob.size > 0) okN++;
+        else bad.push(a.name);
+      }
+      rows.push({ label: t('Artwork (Christmas Collection)'), status: bad.length ? 'missing' : 'ok', detail: bad.length ? t('Không đọc được: {0}', bad.join(', ')) : t('{0}/{1} artwork đọc được từ bộ nhớ máy', okN, list.length) });
+    }
+    for (const j of journeys) if (j.settings.countdownStickerBlobId) {
+      const r = await readBlob(j.settings.countdownStickerBlobId);
+      rows.push({ label: t('{0}: nhãn dán đếm ngược', j.title), status: r && r.blob.size > 0 ? 'ok' : 'missing', detail: r ? t('Đọc được từ bộ nhớ máy') : t('Không đọc được') });
+    }
   }
   rows.push({ label: t('Câu nói du lịch & khẩn cấp'), status: 'ok', detail: t('{0} câu đóng gói sẵn trong ứng dụng (cần vỏ ứng dụng đã cache để dùng offline)', PHRASES.length) });
   rows.push({ label: t('Thông tin khẩn cấp (110 / 120 / 119)'), status: 'ok', detail: t('Đóng gói sẵn trong ứng dụng') });

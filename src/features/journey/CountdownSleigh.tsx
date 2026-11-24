@@ -3,8 +3,21 @@ import type { Journey } from '../../db/schema';
 import { useBlobUrl } from '../../ui/core';
 import { daysBetween } from '../../lib/time';
 import { t } from '../../lib/i18n';
+import { fmtShort } from '../../lib/time';
 
 /** Where the sleigh sits on the countdown track (0 = when the trip was planned, 1 = departure day). Never changes any date. */
+function totalDays(j: Journey) {
+  const planned = (j.createdAt ?? '').slice(0, 10);
+  return Math.max(30, planned ? daysBetween(planned, j.startDate) : 30);
+}
+/** Date shown while dragging: the countdown day that position corresponds to (preview only). */
+function previewDate(j: Journey, p: number): { date: string; left: number } {
+  const left = Math.round((1 - p) * totalDays(j));
+  const d = new Date(j.startDate + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() - left);
+  return { date: d.toISOString().slice(0, 10), left };
+}
+
 export function countdownProgress(j: Journey, phase: 'before' | 'during' | 'after', daysUntil: number): number {
   if (phase !== 'before') return 1;
   const planned = (j.createdAt ?? '').slice(0, 10);
@@ -29,7 +42,7 @@ export function CountdownSleigh({ journey: j, progress, leftLabel, rightLabel }:
   const start = useRef<{ px: number; x: number } | null>(null);
   const lastSpark = useRef(0);
   const [sparks, setSparks] = useState<{ id: number; x: number; y: number; dx: number; s: number }[]>([]);
-  const thumbW = url ? Math.min(260, Math.max(150, w * 0.64)) : 56;
+  const thumbW = url ? Math.min(340, Math.max(200, w * 0.8)) : 56; // V1.2: ~35% larger than 1.1
   const thumbH = url ? thumbW / aspect : 30;
   const maxX = Math.max(0, w - thumbW);
   const realX = progress * maxX;
@@ -80,6 +93,14 @@ export function CountdownSleigh({ journey: j, progress, leftLabel, rightLabel }:
         {sparks.map((p) => (
           <span key={p.id} className="stardust" style={{ left: p.x, top: p.y, width: p.s, height: p.s, ['--dx' as any]: `${p.dx}px` }} />
         ))}
+        {drag != null && maxX > 0 && (() => {
+          const pv = previewDate(j, drag / maxX);
+          return (
+            <span className="sleigh-preview" data-testid="sleigh-preview" style={{ left: Math.min(Math.max(drag + thumbW / 2, 74), w - 74) }}>
+              {fmtShort(pv.date)} · {pv.left ? t('còn {0} ngày', pv.left) : t('Ngày khởi hành')}
+            </span>
+          );
+        })()}
         <button
           type="button"
           className={`sleigh-thumb ${drag == null ? 'settle' : ''}`}

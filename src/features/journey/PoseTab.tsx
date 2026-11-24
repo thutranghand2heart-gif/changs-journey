@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LuHeart, LuPlus, LuImage, LuFan, LuUser, LuHeartHandshake, LuFootprints, LuMoonStar, LuBuilding2, LuSnowflake, LuCamera, LuHand, LuPersonStanding, LuFrame, LuSun, LuPencil, LuX, LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 import type { Activity, Pose } from '../../db/schema';
-import { db, saveFileAsBlob } from '../../db/repo';
+import { db, saveFileAsBlob, updateJourneySettings } from '../../db/repo';
 import { BlobImg, Confirm, Field, go, PageHeader, pickFiles, queryParam, Sheet, useStore, useToast } from '../../ui/core';
 import { useJourney } from './JourneyShell';
 import { uid } from '../../lib/util';
@@ -14,6 +14,7 @@ function CatIcon({ c, size = 18 }: { c: Pose['category']; size?: number }) {
   const I = CAT_ICON[c] ?? LuCamera;
   return <I size={size} />;
 }
+export const DEFAULT_ALBUMS = [tr('Thượng Hải'), tr('Giáng sinh'), tr('Hán phục'), tr('Tô Châu'), tr('Hàng Châu'), tr('Thiên văn')];
 export const POSE_CATS: Record<Pose['category'], string> = { hanfu: tr('Hán phục'), portrait: tr('Chân dung'), couple: tr('Đôi (tự chọn)'), street: tr('Đường phố'), night: tr('Ban đêm'), architecture: tr('Kiến trúc'), seasonal: tr('Theo mùa') };
 
 export function PoseTab() {
@@ -22,7 +23,22 @@ export function PoseTab() {
   const [cat, setCat] = useState<string>('all');
   const [open, setOpen] = useState<string | null>(queryParam('p'));
   const [creating, setCreating] = useState(false);
-  const list = poses.filter((p) => cat === 'all' || (cat === 'fav' ? p.favorite : p.category === cat));
+  const [album, setAlbum] = useState<string | null>(null);
+  const [newAlbum, setNewAlbum] = useState<string | null>(null);
+  const toast = useToast();
+  const albums = Array.from(new Set([...DEFAULT_ALBUMS, ...(j.settings.poseAlbums ?? []), ...(poses.map((p) => p.album).filter(Boolean) as string[])]));
+  const list = poses.filter((p) => (cat === 'all' || (cat === 'fav' ? p.favorite : p.category === cat)) && (!album || p.album === album));
+  const importMany = async () => {
+    const fs = await pickFiles('image/*', true);
+    if (!fs.length || !album) return;
+    let n = poses.filter((p) => p.album === album).length;
+    for (const file of fs) {
+      const rec = await saveFileAsBlob(file, file.name, j.id);
+      n++;
+      await db.put('poses', { id: uid('pose'), journeyId: j.id, category: 'portrait', title: `${t(album)} · ${n}`, description: '', favorite: false, notes: '', refBlobIds: [rec.id], activityIds: [], builtin: false, album } satisfies Pose);
+    }
+    toast(t('Đã nhập {0} ảnh vào album.', fs.length));
+  };
   const sel = poses.find((p) => p.id === open);
   return (
     <div className="page">
@@ -32,6 +48,16 @@ export function PoseTab() {
         <button className={cat === 'fav' ? 'on' : ''} onClick={() => setCat('fav')}>{t('♥ Yêu thích')}</button>
         {Object.entries(POSE_CATS).map(([k, l]) => <button key={k} className={cat === k ? 'on' : ''} onClick={() => setCat(k)}>{t(l)}</button>)}
       </div>
+      <div className="seg scroll-x albums" data-testid="pose-albums">
+        <button className={!album ? 'on' : ''} onClick={() => setAlbum(null)}>{t('Mọi album')}</button>
+        {albums.map((a) => <button key={a} className={album === a ? 'on' : ''} onClick={() => setAlbum(a)}>{t(a)}</button>)}
+        <button data-testid="album-new" onClick={() => setNewAlbum('')}>{t('+ Album')}</button>
+      </div>
+      {album && (
+        <div className="row gap-s wrap">
+          <button className="btn small" data-testid="album-import" onClick={importMany}><LuImage size={14} /> {t('Nhập nhiều ảnh vào “{0}”', t(album))}</button>
+        </div>
+      )}
       <div className="pose-grid">
         {list.map((p) => (
           <button key={p.id} className={`pose-card cat-${p.category}`} onClick={() => setOpen(p.id)}>
@@ -54,6 +80,12 @@ export function PoseTab() {
       </div>
       {!list.length && <p className="muted center">{t('Chưa có dáng nào trong mục này.')}</p>}
       {sel && <PoseSheet p={sel} acts={activities} onClose={() => setOpen(null)} />}
+      <Sheet open={newAlbum != null} onClose={() => setNewAlbum(null)} title={t('Album mới')}>
+        <div className="stack-s">
+          <Field label={t('Tên album')}><input data-testid="album-name" value={newAlbum ?? ''} onChange={(e: any) => setNewAlbum(e.target.value)} /></Field>
+          <button className="btn primary" disabled={!newAlbum?.trim()} onClick={async () => { const n = newAlbum!.trim(); await updateJourneySettings(j.id, { poseAlbums: Array.from(new Set([...(j.settings.poseAlbums ?? []), n])) }); setAlbum(n); setNewAlbum(null); }}>{t('Tạo album')}</button>
+        </div>
+      </Sheet>
       {creating && (
         <PoseSheet
           p={{ id: uid('pose'), journeyId: j.id, category: 'portrait', title: '', description: '', favorite: false, notes: '', refBlobIds: [], activityIds: [], builtin: false }}
@@ -109,15 +141,17 @@ function PoseView({ p, acts, onEdit, onClose }: { p: Pose; acts: Activity[]; onE
 
 function PhotoViewer({ ids, start, onClose }: { ids: string[]; start: number; onClose: () => void }) {
   const [i, setI] = useState(start);
+  const [zoom, setZoom] = useState(1);
   return createPortal(
     <div className="viewer" role="dialog" aria-modal="true" data-testid="pose-fullscreen">
       <div className="viewer-bar">
         <button className="icon-btn" aria-label={t('Đóng')} onClick={onClose}><LuX size={22} /></button>
         <span className="grow center small">{i + 1}/{ids.length}</span>
         <button className="icon-btn" aria-label={t('Ảnh trước')} disabled={i === 0} onClick={() => setI(i - 1)}><LuChevronLeft size={22} /></button>
-        <button className="icon-btn" aria-label={t('Ảnh sau')} disabled={i === ids.length - 1} onClick={() => setI(i + 1)}><LuChevronRight size={22} /></button>
+        <button className="icon-btn" aria-label={t('Ảnh sau')} disabled={i === ids.length - 1} onClick={() => (setI(i + 1), setZoom(1))}><LuChevronRight size={22} /></button>
+        <button className="btn small" data-testid="pose-zoom" aria-label={t('Phóng to')} onClick={() => setZoom(zoom >= 3 ? 1 : zoom + 1)}>{zoom}×</button>
       </div>
-      <div className="viewer-body"><BlobImg id={ids[i]} className="viewer-fit" /></div>
+      <div className={`viewer-body ${zoom > 1 ? 'zoomed' : ''}`} onDoubleClick={() => setZoom(zoom >= 3 ? 1 : zoom + 1)}><div style={{ width: `${zoom * 100}%` }}><BlobImg id={ids[i]} className="viewer-fit" /></div></div>
     </div>,
     document.body,
   );
@@ -133,6 +167,10 @@ function PoseEditor({ p, acts, onClose, isNew }: { p: Pose; acts: Activity[]; on
   const toast = useToast();
   const [f, setF] = useState(p);
   const [del, setDel] = useState(false);
+  const [delPhoto, setDelPhoto] = useState<string | null>(null);
+  const { journey: jj, places } = useJourney();
+  const allPoses = useStore<Pose>('poses', p.journeyId);
+  const albumsAll = Array.from(new Set([...DEFAULT_ALBUMS, ...(jj.settings.poseAlbums ?? []), ...(allPoses.map((x) => x.album).filter(Boolean) as string[])]));
   const save = async (next = f) => {
     await db.put('poses', next);
     // keep the activity → pose back-links consistent (one record each, ids only)
@@ -149,6 +187,20 @@ function PoseEditor({ p, acts, onClose, isNew }: { p: Pose; acts: Activity[]; on
         <Field label={t('Nhóm')}>
           <select value={f.category} onChange={(e: any) => setF({ ...f, category: e.target.value })}>{Object.entries(POSE_CATS).map(([k, l]) => <option key={k} value={k}>{t(l)}</option>)}</select>
         </Field>
+        <div className="row gap">
+          <Field label={t('Album')}>
+            <select data-testid="pose-album" value={f.album ?? ''} onChange={(e: any) => setF({ ...f, album: e.target.value || undefined })}>
+              <option value="">—</option>
+              {albumsAll.map((a) => <option key={a} value={a}>{t(a)}</option>)}
+            </select>
+          </Field>
+          <Field label={t('Địa điểm')}>
+            <select value={f.placeId ?? ''} onChange={(e: any) => setF({ ...f, placeId: e.target.value || undefined })}>
+              <option value="">—</option>
+              {places.map((pl) => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
+            </select>
+          </Field>
+        </div>
         <Field label={t('Mô tả')}><textarea rows={3} value={f.description} onChange={(e: any) => setF({ ...f, description: e.target.value })} /></Field>
         {GUIDE.map(([k, l]) => (
           <Field key={k} label={t(l)}><textarea rows={2} value={(f[k] as string) ?? ''} onChange={(e: any) => setF({ ...f, [k]: e.target.value || undefined })} /></Field>
@@ -159,10 +211,16 @@ function PoseEditor({ p, acts, onClose, isNew }: { p: Pose; acts: Activity[]; on
           <h4>{t('Ảnh tham khảo của bạn')}</h4>
           <p className="muted xsmall">{t('Chỉ lưu trên thiết bị; không tự chia sẻ.')}</p>
           <div className="thumb-row">
-            {f.refBlobIds.map((id) => (
+            {f.refBlobIds.map((id, i) => (
               <span key={id} className="thumb-wrap">
                 <BlobImg id={id} className="thumb" />
-                <button className="thumb-x" aria-label={t('Bỏ ảnh này')} onClick={() => setF({ ...f, refBlobIds: f.refBlobIds.filter((x) => x !== id) })}>×</button>
+                {i === 0 && <span className="thumb-cover">{t('Bìa')}</span>}
+                <button className="thumb-x" aria-label={t('Bỏ ảnh này')} onClick={() => setDelPhoto(id)}>×</button>
+                <span className="thumb-moves">
+                  <button aria-label={t('Sang trái')} disabled={i === 0} onClick={() => { const a = [...f.refBlobIds]; [a[i - 1], a[i]] = [a[i], a[i - 1]]; setF({ ...f, refBlobIds: a }); }}>‹</button>
+                  {i > 0 && <button aria-label={t('Đặt làm bìa')} onClick={() => setF({ ...f, refBlobIds: [id, ...f.refBlobIds.filter((x) => x !== id)] })}>★</button>}
+                  <button aria-label={t('Sang phải')} disabled={i === f.refBlobIds.length - 1} onClick={() => { const a = [...f.refBlobIds]; [a[i + 1], a[i]] = [a[i], a[i + 1]]; setF({ ...f, refBlobIds: a }); }}>›</button>
+                </span>
               </span>
             ))}
           </div>
@@ -195,6 +253,7 @@ function PoseEditor({ p, acts, onClose, isNew }: { p: Pose; acts: Activity[]; on
             })}
           </div>
         )}
+        <Confirm open={!!delPhoto} danger title={t('Bỏ ảnh này khỏi dáng?')} body={t('Ảnh sẽ không còn trong dáng này sau khi bạn bấm Lưu.')} onConfirm={async () => void setF({ ...f, refBlobIds: f.refBlobIds.filter((x) => x !== delPhoto) })} onClose={() => setDelPhoto(null)} />
         <div className="row gap">
           {!isNew && <button className="btn danger ghost" onClick={() => setDel(true)}>{t('Xóa')}</button>}
           <button className="btn primary" disabled={!f.title.trim()} onClick={async () => (await save(), toast(t('Đã lưu')), onClose())}>{t('Lưu')}</button>

@@ -3,6 +3,7 @@ import { LuHouse, LuBookOpen, LuMap, LuCamera, LuWallet } from 'react-icons/lu';
 import type { Activity, Day, Journey, Place } from '../../db/schema';
 import * as db from '../../db/idb';
 import { go, useLive } from '../../ui/core';
+import { ArtIcon } from '../../ui/art';
 import { themeStyle, tokensFor } from '../../lib/themes';
 import { t } from '../../lib/i18n';
 import { BgLayer } from './Background';
@@ -54,21 +55,22 @@ export function JourneyShell({ id, tab, children }: { id: string; tab: string; c
       <div className={`journey-root theme-${s.theme} font-${s.fontStyle}`} style={themeStyle(tk, s.fontStyle)}>
         {bg && primary && <BgLayer bg={bg} />}
         <div className="journey-content">{children(data)}</div>
-        <TabBar id={id} tab={tab} />
+        <TabBar id={id} tab={tab} xmas={data.journey.settings.theme === 'christmas-emerald'} />
       </div>
     </Ctx.Provider>
   );
 }
 
-function TabBar({ id, tab }: { id: string; tab: string }) {
+const TAB_ART: Record<string, string> = { '': 'home', journey: 'journey', map: 'map', pose: 'pose', wallet: 'wallet' };
+function TabBar({ id, tab, xmas }: { id: string; tab: string; xmas: boolean }) {
   return (
-    <nav className="tabbar" aria-label={t('Điều hướng chuyến đi')}>
+    <nav className={`tabbar ${xmas ? 'tabbar-art' : ''}`} aria-label={t('Điều hướng chuyến đi')}>
       {TABS.map((x) => {
         const Icon = x.icon;
         const on = tab === x.key;
         return (
           <button key={x.key} className={on ? 'on' : ''} aria-current={on ? 'page' : undefined} onClick={() => go(`/j/${id}${x.key ? '/' + x.key : ''}`)}>
-            <Icon size={21} />
+            {xmas ? <ArtIcon id={TAB_ART[x.key]} active={on} size={30} fallback={<Icon size={21} />} /> : <Icon size={21} />}
             <span>{t(x.label)}</span>
           </button>
         );

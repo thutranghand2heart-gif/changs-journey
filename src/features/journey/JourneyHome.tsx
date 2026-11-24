@@ -7,7 +7,8 @@ import type { WalletDoc } from '../../db/schema';
 import { go, useStore, useToast } from '../../ui/core';
 import { useApp } from '../../ui/app-context';
 import { useJourney } from './JourneyShell';
-import { ChristmasTree } from '../../art/Tree';
+import { JourneyTree } from '../../art/TreeArt';
+import { JourneyCover } from '../../ui/Cover';
 import { Snow } from '../../art/Snow';
 import { isPlaying, onAudio, startAmbience, stopAmbience } from '../../art/audio';
 import { smartToday } from '../../lib/today';
@@ -63,7 +64,7 @@ export function JourneyHome() {
     <div className={`jhome ${isXmas ? 'xmas' : 'themed'}`}>
       {isXmas ? (
         <div className="tree-stage" aria-hidden="true">
-          <ChristmasTree animate={!motionOff} lights={s.decorations} />
+          <JourneyTree journey={j} animate={!motionOff} lights={s.decorations} />
         </div>
       ) : (
         <div className="theme-deco" aria-hidden="true">{tk.deco}</div>
@@ -174,7 +175,7 @@ export function JourneyHome() {
       {opening && (
         <div className="opening" role="dialog" aria-label={t('Mở đầu')}>
           <div className="opening-book">
-            {isXmas ? <ChristmasTree animate lights /> : <div className="theme-deco static">{tk.deco}</div>}
+            {isXmas ? <JourneyCover journey={j} /> : <div className="theme-deco static">{tk.deco}</div>}
           </div>
           <p className="opening-title display"><Tx s="journeys" r={j} f="title" /></p>
           <p className="opening-sub">{t('Every step has a story.')}</p>

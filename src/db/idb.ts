@@ -63,6 +63,10 @@ export function openDb(): Promise<IDBDatabase> {
       if (old >= 1 && old < 3 && !db.objectStoreNames.contains('translations')) {
         db.createObjectStore('translations', { keyPath: 'id' }).createIndex('journeyId', 'journeyId');
       }
+      // v4 (app 1.2): Storybook pages — additive only, existing stores untouched
+      if (old >= 1 && old < 4 && !db.objectStoreNames.contains('storypages')) {
+        db.createObjectStore('storypages', { keyPath: 'id' }).createIndex('journeyId', 'journeyId');
+      }
     };
     r.onsuccess = () => {
       const conn = r.result;

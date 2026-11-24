@@ -8,16 +8,28 @@ import { THEMES } from '../../lib/themes';
 import { LanguageList } from '../../ui/Language';
 import { t } from '../../lib/i18n';
 import { useCt } from '../../ui/contentTx';
+import { ArtIcon, useArtUrl } from '../../ui/art';
+import { LuBookHeart, LuImages, LuBookOpen, LuFrame, LuGift, LuPenLine, LuMail, LuHourglass, LuSparkles, LuDownload, LuUtensils, LuReceipt, LuPlane, LuTrainFront, LuCloudSun, LuListChecks, LuLanguages, LuPhone, LuGlobe, LuSearch, LuSnowflake, LuPalette, LuImage, LuLock, LuArchive, LuWifiOff } from 'react-icons/lu';
 
+type Feat = [label: string, path: string, art: string | null, Icon: any];
 export function FeatureLibrary() {
   const { journey: j } = useJourney();
   const b = `/j/${j.id}`;
-  const groups: [string, [string, string][]][] = [
-    [t('Kỷ niệm'), [[t('📖 Memory Book'), `${b}/memories/book`], [t('🖼️ Gallery'), `${b}/memories/gallery`], [t('⭐ Keepsakes'), `${b}/memories/keepsakes`], [t('✍️ Viết kỷ niệm'), `${b}/memories/new`], [t('💌 Bưu thiếp'), `${b}/postcards`], [t('⏳ Hộp thời gian'), `${b}/capsules`], [t('✨ Trang kết'), `${b}/ending`], [t('⬇️ Xuất kỷ niệm'), `${b}/export`]]],
-    [t('Chuyến đi'), [[t('💰 Ngân sách'), `${b}/budget`], [t('🍜 Food Passport'), `${b}/food`], [t('🚕 Di chuyển'), `${b}/transport`], [t('⛅ Thời tiết & trang phục'), `${b}/weather`], [t('✅ Checklist'), `${b}/checklist`], [t('🛂 Thẻ nhập cảnh'), `${b}/travel-doc`], [t('🔎 Tìm kiếm'), `${b}/search`]]],
-    [t('Ngôn ngữ & an toàn'), [[t('🈶 Trợ lý ngôn ngữ'), `${b}/language`], [t('🆘 Khẩn cấp'), `${b}/emergency`], [t('🌐 Dịch nội dung bạn nhập'), `/translate?j=${j.id}`]]],
-    [t('Phép màu'), [[t('🎄 Advent · Quả cầu tuyết · Xe tuần lộc'), `${b}/magic`], [t('🎨 Giao diện & ảnh nền'), `${b}/appearance`]]],
-    [t('Bảo vệ'), [[t('🔒 Két riêng tư'), '/vault'], [t('🛡️ Sao lưu & khôi phục'), '/backup'], [t('📶 Sẵn sàng offline'), `/offline?j=${j.id}`]]],
+  const xmas = j.settings.theme === 'christmas-emerald';
+  const groups: [string, Feat[]][] = [
+    [t('Kỷ niệm & câu chuyện'), [
+      [t('Memory Book'), `${b}/memories/book`, 'memory', LuBookHeart], [t('Gallery'), `${b}/memories/gallery`, 'gallery', LuImages], [t('Storybook'), `${b}/storybook`, 'home', LuBookOpen],
+      [t('Khung ảnh kỷ niệm'), `${b}/frames`, null, LuFrame], [t('Keepsakes'), `${b}/memories/keepsakes`, 'keepsakes', LuGift], [t('Viết kỷ niệm'), `${b}/memories/new`, null, LuPenLine],
+      [t('Bưu thiếp'), `${b}/postcards`, null, LuMail], [t('Hộp thời gian'), `${b}/capsules`, null, LuHourglass], [t('Trang kết'), `${b}/ending`, null, LuSparkles], [t('Xuất kỷ niệm'), `${b}/export`, null, LuDownload],
+    ]],
+    [t('Ẩm thực & trải nghiệm'), [[t('Food Passport'), `${b}/food`, 'food', LuUtensils], [t('Ngân sách'), `${b}/budget`, null, LuReceipt]]],
+    [t('Hành trang du lịch'), [
+      [t('Thẻ nhập cảnh'), `${b}/travel-doc`, 'flight', LuPlane], [t('Di chuyển'), `${b}/transport`, 'train', LuTrainFront], [t('Thời tiết & trang phục'), `${b}/weather`, null, LuCloudSun],
+      [t('Checklist'), `${b}/checklist`, null, LuListChecks], [t('Trợ lý ngôn ngữ'), `${b}/language`, null, LuLanguages], [t('Khẩn cấp'), `${b}/emergency`, null, LuPhone],
+      [t('Dịch nội dung bạn nhập'), `/translate?j=${j.id}`, null, LuGlobe], [t('Tìm kiếm'), `${b}/search`, null, LuSearch],
+    ]],
+    [t('Phép màu Giáng sinh'), [[t('Advent · Quả cầu tuyết · Xe tuần lộc'), `${b}/magic`, 'globe', LuSnowflake], [t('Giao diện & ảnh nền'), `${b}/appearance`, null, LuPalette], [t('Artwork'), '/artwork', null, LuImage]]],
+    [t('Riêng tư & bảo vệ'), [[t('Két riêng tư'), '/vault', 'vault', LuLock], [t('Sao lưu & khôi phục'), '/backup', 'backup', LuArchive], [t('Sẵn sàng offline'), `/offline?j=${j.id}`, null, LuWifiOff]]],
   ];
   return (
     <div className="page">
@@ -25,7 +37,14 @@ export function FeatureLibrary() {
       {groups.map(([g, items]) => (
         <section key={g} className="glass-card">
           <h3>{g}</h3>
-          <div className="menu-list">{items.map(([l, p]) => <button key={p} onClick={() => go(p)}>{l}</button>)}</div>
+          <div className="feat-grid">
+            {items.map(([l, p, art, Icon]) => (
+              <button key={p} className="feat" onClick={() => go(p)}>
+                <span className="feat-ic">{xmas && art ? <ArtIcon id={art} size={44} fallback={<Icon size={22} />} /> : <Icon size={22} />}</span>
+                <span className="feat-l">{l}</span>
+              </button>
+            ))}
+          </div>
         </section>
       ))}
     </div>
@@ -98,6 +117,8 @@ export function AppearancePage() {
           </div>
         )}
         <StickerSettings />
+        {j.settings.theme === 'christmas-emerald' && <TreePlacement />}
+        <button className="btn small" onClick={() => go('/artwork')}>{t('Artwork (Christmas Collection)')}</button>
         <Field label={t('Kiểu chữ')}>
           <select value={s.fontStyle} onChange={(e: any) => set({ fontStyle: e.target.value })}><option value="storybook">{t('Storybook (có chân)')}</option><option value="modern">{t('Hiện đại')}</option><option value="handwritten">{t('Viết tay')}</option></select>
         </Field>
@@ -139,6 +160,24 @@ function StickerSettings() {
         {id && <button className="btn small ghost" onClick={() => setDel(true)}>{t('Gỡ ảnh')}</button>}
       </div>
       <Confirm open={del} title={t('Gỡ nhãn dán?')} body={t('Thanh đếm ngược sẽ dùng hình mặc định. Ảnh sẽ bị xóa khỏi máy này (bản sao lưu cũ vẫn còn).')} onConfirm={async () => { await updateJourneySettings(j.id, { countdownStickerBlobId: undefined }); if (id) await db.del('blobs', id); }} onClose={() => setDel(false)} />
+    </section>
+  );
+}
+
+/** Position & size of the official tree artwork on this journey's Home (does not edit the image). */
+function TreePlacement() {
+  const { journey: j } = useJourney();
+  const url = useArtUrl('tree', 'thumb');
+  if (!url) return null;
+  const ta = j.settings.treeArt ?? {};
+  const set = (k: 'scale' | 'dx' | 'dy', v: number) => updateJourneySettings(j.id, { treeArt: { ...ta, [k]: v } });
+  return (
+    <section className="card" data-testid="tree-placement">
+      <h4>{t('🎄 Cây thông trên trang chủ')}</h4>
+      <label className="small">{t('Kích thước')} <input type="range" min="0.7" max="1.35" step="0.05" value={ta.scale ?? 1} onChange={(e: any) => set('scale', +e.target.value)} /></label>
+      <label className="small">{t('Ngang')} <input type="range" min="-30" max="20" step="1" value={ta.dx ?? 0} onChange={(e: any) => set('dx', +e.target.value)} /></label>
+      <label className="small">{t('Dọc')} <input type="range" min="-15" max="25" step="1" value={ta.dy ?? 0} onChange={(e: any) => set('dy', +e.target.value)} /></label>
+      <button className="btn small ghost" onClick={() => updateJourneySettings(j.id, { treeArt: {} })}>{t('Đặt lại')}</button>
     </section>
   );
 }

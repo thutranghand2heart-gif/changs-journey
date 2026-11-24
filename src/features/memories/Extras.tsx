@@ -13,7 +13,9 @@ import { readPrivateMemory } from '../../lib/vault';
 import { Cinema } from './Memories';
 import { useApp } from '../../ui/app-context';
 import { tokensFor } from '../../lib/themes';
-import { t } from '../../lib/i18n';
+import { t, tr } from '../../lib/i18n';
+import { ArtImg, useArtwork } from '../../ui/art';
+import { LayerEditor, newTextLayer, type Layer } from '../../ui/LayerEditor';
 import { Tx } from '../../ui/contentTx';
 
 // ───────── Postcard Studio
@@ -92,9 +94,10 @@ export function PostcardStudio() {
       </div>
       <Field label={t('Lời nhắn')}><textarea rows={3} value={msg} onChange={(e: any) => setMsg(e.target.value)} /></Field>
       <button className="btn primary" disabled={!url || busy} onClick={render}>{busy ? t('Đang vẽ…') : t('Tạo bưu thiếp')}</button>
+      <TemplatePostcards photos={photos} cards={cards} />
       <h3 className="section-title">{t('Bưu thiếp của bạn')}</h3>
       <div className="postcards">
-        {cards.map((c) => <PostcardItem key={c.id} c={c} />)}
+        {cards.map((c) => (c.templateId ? <TemplateCardItem key={c.id} c={c} /> : c.blobId ? <PostcardItem key={c.id} c={c} /> : null))}
         {!cards.length && <p className="muted">{t('Chưa có bưu thiếp.')}</p>}
       </div>
     </div>
@@ -104,7 +107,7 @@ function PostcardItem({ c }: { c: Postcard }) {
   const toast = useToast();
   const [del, setDel] = useState(false);
   const share = async () => {
-    const r = await readBlob(c.blobId);
+    const r = await readBlob(c.blobId!);
     if (!r) return toast(t('Không đọc được tệp'), 'err');
     const file = new File([r.blob], r.rec.name, { type: 'image/png' });
     if ((navigator as any).canShare?.({ files: [file] })) {
@@ -113,12 +116,89 @@ function PostcardItem({ c }: { c: Postcard }) {
   };
   return (
     <figure className="postcard">
-      <BlobImg id={c.blobId} className="postcard-img" />
+      <BlobImg id={c.blobId!} className="postcard-img" />
       <div className="row gap-s">
         <button className="btn small" onClick={share}><LuShare2 size={14} /> {' '}{t('Chia sẻ / lưu')}</button>
         <button className="btn small ghost danger" onClick={() => setDel(true)}>{t('Xóa')}</button>
       </div>
-      <Confirm open={del} danger title={t('Xóa bưu thiếp?')} body="" onConfirm={async () => (await db.del('blobs', c.blobId), await db.del('postcards', c.id))} onClose={() => setDel(false)} />
+      <Confirm open={del} danger title={t('Xóa bưu thiếp?')} body="" onConfirm={async () => (await db.del('blobs', c.blobId!), await db.del('postcards', c.id))} onClose={() => setDel(false)} />
+    </figure>
+  );
+}
+
+// ───────── Template postcards (Chang's Christmas Postcards) — layered, editable drafts
+const POSTCARD_IDS = ['postcard-shanghai', 'postcard-suzhou', 'postcard-hangzhou', 'postcard-celestial'];
+function TemplatePostcards({ photos, cards }: { photos: string[]; cards: Postcard[] }) {
+  const { journey: j } = useJourney();
+  const art = useArtwork();
+  const [edit, setEdit] = useState<string | null>(() => new URLSearchParams(location.hash.split('?')[1] ?? '').get('edit'));
+  useEffect(() => {
+    const h = (e: any) => setEdit(e.detail);
+    addEventListener('pc-edit', h);
+    return () => removeEventListener('pc-edit', h);
+  }, []);
+  const avail = POSTCARD_IDS.filter((id) => art.assets[id]);
+  const create = async (templateId: string) => {
+    const a = art.assets[templateId];
+    const box = (a?.textBox ?? [0.47, 0.13, 0.93, 0.86]) as [number, number, number, number];
+    const [x0, y0, x1, y1] = box;
+    const mk = (y: number, size: number, font: 'script' | 'serif') => ({ ...newTextLayer(box), y, size, font, text: '' });
+    const c: Postcard = { id: uid('pc'), journeyId: j.id, message: '', createdAt: nowIso(), updatedAt: nowIso(), templateId, draft: true,
+      layers: [mk(y0 + 0.08, 0.034, 'script'), mk(y0 + (y1 - y0) * 0.45, 0.03, 'serif'), { ...mk(y1 - 0.08, 0.024, 'serif'), align: 'right' }] };
+    void x0; void x1;
+    await db.put('postcards', c);
+    setEdit(c.id);
+  };
+  const cur = cards.find((c) => c.id === edit);
+  if (!avail.length) return <p className="xsmall muted">{t('Mẫu bưu thiếp Christmas Collection xuất hiện ở đây sau khi bạn nhập gói artwork (Cài đặt → Artwork).')}</p>;
+  return (
+    <section>
+      <h3 className="section-title">{t('Mẫu bưu thiếp')}</h3>
+      <div className="postcard-templates" data-testid="postcard-templates">
+        {avail.map((id) => (
+          <button key={id} className="pc-template" onClick={() => create(id)} aria-label={art.assets[id].name}>
+            <ArtImg id={id} v="thumb" />
+            <span className="xsmall">{t(TEMPLATE_NAME[id] ?? art.assets[id].name)}</span>
+          </button>
+        ))}
+      </div>
+      {cur && <PostcardEditor c={cur} photos={photos} onClose={() => setEdit(null)} />}
+    </section>
+  );
+}
+const TEMPLATE_NAME: Record<string, string> = {
+  'postcard-shanghai': tr('Giáng sinh Thượng Hải'),
+  'postcard-suzhou': tr('Tô Châu — Giấc mộng Giang Nam'),
+  'postcard-hangzhou': tr('Hàng Châu — Mùa đông bên Tây Hồ'),
+  'postcard-celestial': tr('Hành trình thiên văn'),
+};
+function PostcardEditor({ c, photos, onClose }: { c: Postcard; photos: string[]; onClose: () => void }) {
+  const art = useArtwork();
+  const { journey: j } = useJourney();
+  const [layers, setLayers] = useState<Layer[]>((c.layers ?? []) as Layer[]);
+  const a = art.assets[c.templateId!];
+  useEffect(() => {
+    const h = setTimeout(() => db.put('postcards', { ...c, layers, updatedAt: nowIso(), message: layers.filter((l) => l.kind === 'text').map((l) => l.text).filter(Boolean).join('\n') }), 400);
+    return () => clearTimeout(h);
+  }, [layers]);
+  return (
+    <Sheet open onClose={onClose} title={t(TEMPLATE_NAME[c.templateId!] ?? '') || t('Bưu thiếp')} full>
+      <LayerEditor bg={{ assetId: c.templateId, aspect: a ? a.height / a.width : 2 / 3, safe: a?.textBox as any }} layers={layers} onChange={setLayers} photoChoices={photos} fileName={`postcard-${c.id}`} ownerJourneyId={j.id} />
+      <p className="xsmall muted">{t('Bản nháp tự lưu trên máy. Ứng dụng không tự gửi bưu thiếp cho ai.')}</p>
+    </Sheet>
+  );
+}
+function TemplateCardItem({ c }: { c: Postcard }) {
+  const [del, setDel] = useState(false);
+  return (
+    <figure className="postcard">
+      <ArtImg id={c.templateId!} v="thumb" className="postcard-img" />
+      <figcaption className="xsmall muted">{c.message ? c.message.slice(0, 60) : t('Bản nháp')}</figcaption>
+      <div className="row gap-s">
+        <button className="btn small" onClick={() => dispatchEvent(new CustomEvent('pc-edit', { detail: c.id }))}>{t('Mở / sửa')}</button>
+        <button className="btn small ghost danger" onClick={() => setDel(true)}>{t('Xóa')}</button>
+      </div>
+      <Confirm open={del} danger title={t('Xóa bưu thiếp?')} body="" onConfirm={async () => void (await db.del('postcards', c.id))} onClose={() => setDel(false)} />
     </figure>
   );
 }
