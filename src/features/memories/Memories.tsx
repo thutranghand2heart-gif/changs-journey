@@ -9,6 +9,7 @@ import { fmtShort } from '../../lib/time';
 import { publicMemories } from '../../lib/search';
 import { useApp } from '../../ui/app-context';
 import { locale, t } from '../../lib/i18n';
+import { OriginalToggle, Tx, useCt } from '../../ui/contentTx';
 
 export function MemoriesHub({ view = 'book' }: { view?: string }) {
   const { journey: j, days } = useJourney();
@@ -37,7 +38,7 @@ export function MemoriesHub({ view = 'book' }: { view?: string }) {
               <section key={d.id} className="book-page glass-card">
                 <header>
                   <span className="muted xsmall">{t('Ngày')}{' '}{d.index} · {fmtShort(d.date)}</span>
-                  <h3 className="display">{d.title}</h3>
+                  <h3 className="display"><Tx s="days" r={d} f="title" /></h3>
                 </header>
                 {list.map((m) => <MemoryCard key={m.id} m={m} />)}
                 {!list.length && (d.freeDay ? <p className="muted small italic">{t('Trang này để trống — chỉ bạn quyết định có viết gì hay không.')}</p> : <button className="link-btn" onClick={() => go(`${base}/new?day=${d.id}`)}>{t('+ Viết cho ngày này')}</button>)}
@@ -89,17 +90,19 @@ export function MemoryView({ id }: { id: string }) {
   if (!m) return <div className="page"><PageHeader title={t('Không tìm thấy kỷ niệm')} back={`/j/${j.id}/memories`} /></div>;
   return <MemoryViewInner m={m} dayLabel={days.find((d) => d.id === m.dayId)} />;
 }
-function MemoryViewInner({ m, dayLabel }: { m: Memory; dayLabel?: { index: number; title: string } }) {
+function MemoryViewInner({ m, dayLabel }: { m: Memory; dayLabel?: { id: string; index: number; title: string } }) {
   const { journey: j } = useJourney();
+  const ct = useCt();
   const txt = useMemoryText(m);
   return (
     <div className="page">
-      <PageHeader title={txt?.title || (m.privacy === 'private' ? t('Kỷ niệm riêng tư') : t('Kỷ niệm'))} sub={dayLabel ? t('Ngày {0}: {1}', dayLabel.index, dayLabel.title) : undefined} back={`/j/${j.id}/memories`} right={<button className="btn small" onClick={() => go(`/j/${j.id}/memories/${m.id}/edit`)}><LuPencil size={14} /> {' '}{t('Sửa')}</button>} />
+      <PageHeader title={txt?.title || (m.privacy === 'private' ? t('Kỷ niệm riêng tư') : t('Kỷ niệm'))} sub={dayLabel ? t('Ngày {0}: {1}', dayLabel.index, ct('days', dayLabel, 'title')) : undefined} back={`/j/${j.id}/memories`} right={<button className="btn small" onClick={() => go(`/j/${j.id}/memories/${m.id}/edit`)}><LuPencil size={14} /> {' '}{t('Sửa')}</button>} />
       {!txt ? (
         <div className="stack"><p>{t('🔒 Đã mã hóa. Mở khóa Két để đọc.')}</p><button className="btn" onClick={() => go('/vault')}>{t('Mở Két')}</button></div>
       ) : (
         <article className={`memory-article layout-${m.layout}`}>
           <div className="photo-stack">{m.photoBlobIds.map((pid) => <BlobImg key={pid} id={pid} className="memory-photo" />)}</div>
+          <OriginalToggle s="memories" r={m} fields={['title', 'body']} />
           <Markup className="memory-body" text={txt.body} />
           <p className="muted xsmall">{new Date(m.updatedAt).toLocaleString(locale())} {m.privacy === 'private' && t('· riêng tư, đã mã hóa')}</p>
         </article>

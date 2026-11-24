@@ -5,6 +5,7 @@ import { Confirm, Field, go, PageHeader, queryParam, Sheet, useStore, useToast }
 import { tokensFor } from '../../lib/themes';
 import { fold } from '../../lib/util';
 import { t } from '../../lib/i18n';
+import { Tx } from '../../ui/contentTx';
 
 export function Library() {
   const journeys = useStore<Journey>('journeys');
@@ -35,7 +36,7 @@ export function Library() {
           return (
             <button key={j.id} className="book-spine" style={{ background: `linear-gradient(90deg, ${tk.bg}, ${tk.bg2} 30%, ${tk.bg})`, color: tk.text, borderColor: tk.accent }} onClick={() => setSel(j)}>
               <span className="spine-emoji">{j.coverEmoji}</span>
-              <span className="spine-title">{j.title}</span>
+              <span className="spine-title"><Tx s="journeys" r={j} f="title" /></span>
               <span className="spine-year">{j.startDate.slice(0, 4)}</span>
               {j.archived && <span className="spine-tag">{t('lưu trữ')}</span>}
             </button>

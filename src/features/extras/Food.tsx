@@ -6,6 +6,7 @@ import { BlobImg, Confirm, Field, go, PageHeader, pickFiles, Sheet, useStore, us
 import { useJourney } from '../journey/JourneyShell';
 import { fmtMoney, nowIso, uid } from '../../lib/util';
 import { t } from '../../lib/i18n';
+import { Tx } from '../../ui/contentTx';
 
 export function FoodPassport() {
   const { journey: j } = useJourney();
@@ -24,7 +25,7 @@ export function FoodPassport() {
               {list.map((f) => (
                 <button key={f.id} className={`stamp ${f.stamped ? 'stamped' : ''}`} onClick={() => setEdit(f)}>
                   {f.photoBlobIds[0] ? <BlobImg id={f.photoBlobIds[0]} className="stamp-img" /> : <span className="stamp-emoji">🍜</span>}
-                  <span className="stamp-name">{f.dish}</span>
+                  <span className="stamp-name"><Tx s="food" r={f} f="dish" /></span>
                   {f.rating ? <span className="xsmall">{'★'.repeat(f.rating)}</span> : null}
                 </button>
               ))}

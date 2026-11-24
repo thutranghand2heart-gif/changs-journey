@@ -8,6 +8,7 @@ import { fmtDateVi, fmtShort, addDays, tzLabel } from '../../lib/time';
 import { uid } from '../../lib/util';
 import { ActivitySheet } from './ActivitySheet';
 import { t, tr } from '../../lib/i18n';
+import { Tx } from '../../ui/contentTx';
 
 export const STATUS_LABEL: Record<ActivityStatus, string> = { draft: tr('Nháp'), tentative: tr('Dự kiến'), booked: tr('Đã đặt'), completed: tr('Đã xong'), cancelled: tr('Đã hủy') };
 
@@ -36,8 +37,8 @@ export function JourneyTab({ dayId }: { dayId?: string }) {
               <div className="day-card-num display">{d.index}</div>
               <div className="grow">
                 <p className="muted xsmall">{fmtDateVi(d.date)}</p>
-                <h3 className="display">{d.title}</h3>
-                {d.subtitle && <p className="muted small">{d.subtitle}</p>}
+                <h3 className="display"><Tx s="days" r={d} f="title" /></h3>
+                {d.subtitle && <p className="muted small"><Tx s="days" r={d} f="subtitle" /></p>}
               </div>
             </button>
             {j.seedKey === undefined && days.length > 1 && (
@@ -75,12 +76,12 @@ function DayView({ day }: { day: Day }) {
   return (
     <div className="page">
       <PageHeader
-        title={<span className="display">{t('Ngày')}{' '}{day.index}: {day.title}</span>}
+        title={<span className="display">{t('Ngày')}{' '}{day.index}: <Tx s="days" r={day} f="title" /></span>}
         sub={`${fmtDateVi(day.date)}${day.subtitle ? ' · ' + day.subtitle.replace(/^[^·]*·\s*/, '') : ''}`}
         back={`/j/${j.id}/journey`}
         right={<button className="icon-btn" aria-label={t('Sửa ngày')} onClick={() => setEditDay(true)}><LuPencil size={18} /></button>}
       />
-      {day.notes && <p className="glass-card small">📝 {day.notes}</p>}
+      {day.notes && <p className="glass-card small">📝 <Tx s="days" r={day} f="notes" /></p>}
 
       {day.freeDay ? (
         <div className="free-day glass-card">
@@ -120,7 +121,7 @@ function Timeline({ acts, onOpen, placeName }: { acts: Activity[]; onOpen: (id: 
               {a.timeZone !== j.timeZone && a.timeZoneLabel && <span className="tz-badge">{t(a.timeZoneLabel)}</span>}
               {a.kind === 'flight' && a.timeZone === j.timeZone && <span className="tz-badge">{t(a.timeZoneLabel ?? tzLabel(a.timeZone))}</span>}
             </div>
-            <div className="tl-title">{a.title}</div>
+            <div className="tl-title"><Tx s="activities" r={a} f="title" /></div>
             {a.nameZh && <div className="zh small" lang="zh-CN">{a.nameZh}</div>}
             {!a.nameZh && placeName(a.placeId) && <div className="muted small">{placeName(a.placeId)}</div>}
             <div className="tl-tags">

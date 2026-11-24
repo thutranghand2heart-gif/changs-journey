@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Memory } from '../../db/schema';
 import { onVault, readPrivateMemory, vaultUnlocked } from '../../lib/vault';
+import { useCt } from '../../ui/contentTx';
 
 export function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -31,5 +32,8 @@ export function useMemoryText(m: Memory): { title: string; body: string } | null
     if (!open) return setTxt(null);
     readPrivateMemory(m).then(setTxt).catch(() => setTxt(null));
   }, [m.id, m.updatedAt, open]);
+  const ct = useCt();
+  // Non-private memories show their saved translation (if any) in the interface language; private ones never are translated.
+  if (txt && !m.encrypted && m.privacy !== 'private') return { title: ct('memories', m, 'title', txt.title), body: ct('memories', m, 'body', txt.body) };
   return txt;
 }

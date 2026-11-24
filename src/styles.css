@@ -448,3 +448,8 @@ body.no-scroll .tabbar { display: none; }
 .att-main { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 48px; padding: 0; border: none; background: none; color: inherit; cursor: pointer; font: inherit; }
 .update-banner { top: auto; bottom: calc(var(--safe-b) + var(--tabbar-h) + 22px); }
 .travel-doc .btn { color: var(--emerald); border-color: rgba(16, 59, 49, 0.35); background: rgba(16, 59, 49, 0.06); }
+.list-btn{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid rgba(127,127,127,.25);background:rgba(255,255,255,.06);color:inherit;font:inherit}
+.list-btn .block{display:block;margin-top:2px}
+.tx-toggle{font-size:12px;opacity:.75;background:none;border:0;color:inherit;text-decoration:underline;padding:4px 0}
+.tx-badge{font-size:11px;opacity:.6;margin-left:6px}
+body.no-scroll .update-banner{display:none}

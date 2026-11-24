@@ -10,6 +10,7 @@ import { makeDocPrivate, readPrivateDoc, vaultUnlocked } from '../../lib/vault';
 import { addAttachmentFromFile, attIds, deleteAttachmentEverywhere, deleteRecord, isBooking, linkAttachments, linkStandaloneInto, newRecord, orphanAttachments, referencesOf, unlinkAttachment } from '../../lib/wallet';
 import { t, tr } from '../../lib/i18n';
 import { FlightEditor, flightLine } from './FlightEditor';
+import { Tx } from '../../ui/contentTx';
 
 export const DOC_CATS: Record<WalletDoc['category'], string> = {
   flight: tr('Chuyến bay'), train: tr('Tàu'), hotel: tr('Khách sạn'), ticket: tr('Vé tham quan'), reservation: tr('Đặt chỗ'), qr: tr('Mã QR'), receipt: tr('Biên lai'), confirmation: tr('Xác nhận'), immigration: tr('Nhập cảnh'), other: tr('Khác'),
@@ -225,7 +226,7 @@ function LinkSheet({ src, docs, onClose }: { src: WalletDoc; docs: WalletDoc[]; 
           {bookings.map((d) => (
             <label key={d.id} className="toggle-row">
               <input type="checkbox" checked={sel.includes(d.id)} onChange={(e: any) => setSel(e.target.checked ? [...sel, d.id] : sel.filter((x) => x !== d.id))} />
-              {DOC_ICON[d.category]} {d.title}
+              {DOC_ICON[d.category]} <Tx s="docs" r={d} f="title" />
             </label>
           ))}
           {!bookings.length && <p className="muted small">{t('Chưa có hồ sơ đặt chỗ nào. Hãy tạo hồ sơ trước.')}</p>}

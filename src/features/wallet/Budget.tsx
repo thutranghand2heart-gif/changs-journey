@@ -7,6 +7,7 @@ import { useJourney } from '../journey/JourneyShell';
 import { CATEGORY_LABEL, PAYSTATE_LABEL, paidOf, payState, remainingOf, summarize } from '../../lib/budget';
 import { fmtMoney, nowIso, uid } from '../../lib/util';
 import { locale, t } from '../../lib/i18n';
+import { Tx } from '../../ui/contentTx';
 
 export function BudgetPage() {
   const { journey: j, days, activities } = useJourney();
@@ -37,7 +38,7 @@ export function BudgetPage() {
           {expenses.map((e) => (
             <button key={e.id} className="list-row glass-card" onClick={() => setOpen(e.id)}>
               <span className="grow">
-                <b>{e.title}</b>
+                <b><Tx s="expenses" r={e} f="title" /></b>
                 <span className="muted xsmall block">{t(CATEGORY_LABEL[e.category])} · {t(PAYSTATE_LABEL[payState(e)])}{e.dayId ? t(' · Ngày {0}', days.find((d) => d.id === e.dayId)?.index ?? '?') : ''}</span>
               </span>
               <span className="text-right small">

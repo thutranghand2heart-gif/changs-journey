@@ -14,7 +14,7 @@ export function FeatureLibrary() {
   const groups: [string, [string, string][]][] = [
     [t('Kỷ niệm'), [[t('📖 Memory Book'), `${b}/memories/book`], [t('🖼️ Gallery'), `${b}/memories/gallery`], [t('⭐ Keepsakes'), `${b}/memories/keepsakes`], [t('✍️ Viết kỷ niệm'), `${b}/memories/new`], [t('💌 Bưu thiếp'), `${b}/postcards`], [t('⏳ Hộp thời gian'), `${b}/capsules`], [t('✨ Trang kết'), `${b}/ending`], [t('⬇️ Xuất kỷ niệm'), `${b}/export`]]],
     [t('Chuyến đi'), [[t('💰 Ngân sách'), `${b}/budget`], [t('🍜 Food Passport'), `${b}/food`], [t('🚕 Di chuyển'), `${b}/transport`], [t('⛅ Thời tiết & trang phục'), `${b}/weather`], [t('✅ Checklist'), `${b}/checklist`], [t('🛂 Thẻ nhập cảnh'), `${b}/travel-doc`], [t('🔎 Tìm kiếm'), `${b}/search`]]],
-    [t('Ngôn ngữ & an toàn'), [[t('🈶 Trợ lý ngôn ngữ'), `${b}/language`], [t('🆘 Khẩn cấp'), `${b}/emergency`]]],
+    [t('Ngôn ngữ & an toàn'), [[t('🈶 Trợ lý ngôn ngữ'), `${b}/language`], [t('🆘 Khẩn cấp'), `${b}/emergency`], [t('🌐 Dịch nội dung bạn nhập'), `/translate?j=${j.id}`]]],
     [t('Phép màu'), [[t('🎄 Advent · Quả cầu tuyết · Xe tuần lộc'), `${b}/magic`], [t('🎨 Giao diện & ảnh nền'), `${b}/appearance`]]],
     [t('Bảo vệ'), [[t('🔒 Két riêng tư'), '/vault'], [t('🛡️ Sao lưu & khôi phục'), '/backup'], [t('📶 Sẵn sàng offline'), `/offline?j=${j.id}`]]],
   ];

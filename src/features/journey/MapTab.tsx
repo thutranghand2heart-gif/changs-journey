@@ -7,6 +7,7 @@ import { useJourney } from './JourneyShell';
 import { copyText, nowIso, uid } from '../../lib/util';
 import { amapUrl } from '../../lib/maps';
 import { t } from '../../lib/i18n';
+import { OriginalToggle, Tx } from '../../ui/contentTx';
 
 export function MapTab() {
   const { journey: j, places, activities } = useJourney();
@@ -66,7 +67,7 @@ export function MapTab() {
         {inCity.map((p) => (
           <div key={p.id} className={`place-row glass-card ${sel === p.id ? 'on' : ''}`}>
             <button className="grow text-left" onClick={() => setSel(p.id)}>
-              <b>{p.name}</b> {p.visitedAt && <span title={t('đã đến')}>👣</span>} {p.wishlist && <LuStar size={12} />}
+              <b><Tx s="places" r={p} f="name" /></b> {p.visitedAt && <span title={t('đã đến')}>👣</span>} {p.wishlist && <LuStar size={12} />}
               {p.nameZh && <div className="zh small" lang="zh-CN">{p.nameZh}{p.pinyin ? ` · ${p.pinyin}` : ''}</div>}
               {p.addressZh && <div className="zh xsmall muted" lang="zh-CN">{p.addressZh}</div>}
             </button>
@@ -74,13 +75,14 @@ export function MapTab() {
         ))}
       </div>
 
-      <Sheet open={!!selected} onClose={() => setSel(null)} title={selected?.name}>
+      <Sheet open={!!selected} onClose={() => setSel(null)} title={selected ? <Tx s="places" r={selected} f="name" /> : undefined}>
         {selected && (
           <div className="stack">
             {selected.nameZh && <p className="zh big-zh" lang="zh-CN">{selected.nameZh}</p>}
             {selected.addressZh && <p className="zh selectable" lang="zh-CN">{selected.addressZh}</p>}
             {selected.addressEn && <p className="small muted">{selected.addressEn}</p>}
-            {selected.notes && <p className="small">📝 {selected.notes}</p>}
+            <OriginalToggle s="places" r={selected} fields={['name', 'notes']} />
+            {selected.notes && <p className="small">📝 <Tx s="places" r={selected} f="notes" /></p>}
             <div className="row gap-s wrap">
               {selected.addressZh && <button className="btn small" onClick={async () => toast((await copyText(selected.addressZh!)) ? t('Đã sao chép địa chỉ') : t('Không sao chép được'), 'ok')}><LuCopy size={14} /> {' '}{t('Sao chép địa chỉ')}</button>}
               <a className="btn small" href={amapUrl(selected)} target="_blank" rel="noopener noreferrer"><LuNavigation size={14} /> {' '}{t('Amap 高德')}</a>
@@ -90,7 +92,7 @@ export function MapTab() {
               <div className="card">
                 <h4>{t('Hoạt động tại đây')}</h4>
                 {actsAt(selected.id).map((a) => (
-                  <button key={a.id} className="list-row" onClick={() => go(`/j/${j.id}/journey/${a.dayId}?a=${a.id}`)}>{a.start ?? '—'} · {a.title}</button>
+                  <button key={a.id} className="list-row" onClick={() => go(`/j/${j.id}/journey/${a.dayId}?a=${a.id}`)}>{a.start ?? '—'} · <Tx s="activities" r={a} f="title" /></button>
                 ))}
               </div>
             )}

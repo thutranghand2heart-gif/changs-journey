@@ -4,6 +4,7 @@ import { db } from '../../db/repo';
 import { Confirm, Field, PageHeader, Sheet, useStore, useToast, go } from '../../ui/core';
 import { uid } from '../../lib/util';
 import { t } from '../../lib/i18n';
+import { Tx } from '../../ui/contentTx';
 
 export function TravelWorld() {
   const journeys = useStore<Journey>('journeys');
@@ -32,7 +33,7 @@ export function TravelWorld() {
         <h3>{t('🗺️ Đã lên kế hoạch')}</h3>
         {planned.map(({ d, j }, i) => (
           <div key={i} className="list-row">
-            <span className="grow">{d} <span className="muted small">· {j.title}</span></span>
+            <span className="grow">{d} <span className="muted small">· <Tx s="journeys" r={j} f="title" /></span></span>
             <button
               className="btn small"
               onClick={async () => {
@@ -53,7 +54,7 @@ export function TravelWorld() {
         <ol className="timeline-simple">
           {timeline.map((j) => (
             <li key={j.id}>
-              <button className="link-btn" onClick={() => go(`/j/${j.id}`)}>{j.coverEmoji} {j.title}</button> <span className="muted small">{j.startDate}</span>
+              <button className="link-btn" onClick={() => go(`/j/${j.id}`)}>{j.coverEmoji} <Tx s="journeys" r={j} f="title" /></button> <span className="muted small">{j.startDate}</span>
             </li>
           ))}
         </ol>
@@ -88,7 +89,7 @@ function WorldRow({ w, onEdit }: { w: TravelWorldEntry; onEdit: () => void }) {
   return (
     <button className="list-row" onClick={onEdit}>
       <span className="grow">
-        <b>{w.name}</b> {w.country && <span className="muted small">· {w.country}</span>}
+        <b><Tx s="world" r={w} f="name" /></b> {w.country && <span className="muted small">· {w.country}</span>}
         {w.story && <div className="muted small">{w.story.slice(0, 90)}</div>}
       </span>
       {w.visitedOn && <span className="muted small">{w.visitedOn}</span>}

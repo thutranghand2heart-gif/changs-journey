@@ -4,6 +4,8 @@ import { onChange } from './db/idb';
 import type { GlobalSettings, Journey } from './db/schema';
 import { AppCtx } from './ui/app-context';
 import { UpdateNotice } from './ui/UpdateNotice';
+import { AutoTranslate, ContentTxProvider } from './ui/contentTx';
+import { TranslatePage } from './features/global/Translate';
 import { go, ToastHost, useLive, useRoute } from './ui/core';
 import * as db from './db/idb';
 import { setLang, t } from './lib/i18n';
@@ -70,7 +72,10 @@ export function App() {
     <AppCtx.Provider value={{ settings, reduced }}>
       <ToastHost>
         <UpdateNotice />
-        <Router key={settings.language} />
+        <ContentTxProvider>
+          <AutoTranslate />
+          <Router key={settings.language} />
+        </ContentTxProvider>
       </ToastHost>
     </AppCtx.Provider>
   );
@@ -101,6 +106,8 @@ function Router() {
       return <OfflinePage />;
     case 'import':
       return <ImportJourneyPage />;
+    case 'translate':
+      return <TranslatePage />;
     case 'background':
       return <BackgroundEditor back="/" />;
     case 'j':

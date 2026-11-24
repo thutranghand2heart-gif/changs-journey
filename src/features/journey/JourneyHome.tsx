@@ -18,6 +18,7 @@ import { tokensFor } from '../../lib/themes';
 import { hotelOf } from '../../lib/wallet';
 import { LanguageButton } from '../../ui/Language';
 import { getLang, t } from '../../lib/i18n';
+import { Tx } from '../../ui/contentTx';
 
 const seenOpening = new Set<string>();
 const NUM_VI = ['', 'Một', 'Hai', 'Ba', 'Bốn', 'Năm', 'Sáu', 'Bảy', 'Tám', 'Chín', 'Mười'];
@@ -79,7 +80,7 @@ export function JourneyHome() {
 
         <section className="hero">
           <p className="hero-kicker">{j.subtitle ?? j.destinations.join(' · ')}</p>
-          <h1 className="hero-title display">{j.title}</h1>
+          <h1 className="hero-title display"><Tx s="journeys" r={j} f="title" /></h1>
           <p className="hero-dates"><LuCalendar size={14} /> {fmtShort(j.startDate)} – {fmtShort(j.endDate)}, {j.endDate.slice(0, 4)}</p>
         </section>
 
@@ -91,13 +92,13 @@ export function JourneyHome() {
           {today.phase === 'during' && today.day && (
             <div>
               <p className="muted small">{t('Hôm nay · Ngày')}{' '}{today.day.index} · {today.localTime} {' '}{t('(giờ địa phương)')}</p>
-              <h3 className="display">{today.day.title}</h3>
+              <h3 className="display"><Tx s="days" r={today.day} f="title" /></h3>
               {today.calm ? (
                 <p className="calm">{t('Một ngày của riêng bạn. Không có lịch, không có nhắc nhở. 🕯️')}</p>
               ) : (
                 <ul className="upcoming">
                   {today.upcoming.map((a) => (
-                    <li key={a.id}><button className="link-btn" onClick={() => go(`${base}/journey/${a.dayId}?a=${a.id}`)}>{a.start && <b>{a.approxTime ? '~' : ''}{a.start}</b>} {a.title}</button></li>
+                    <li key={a.id}><button className="link-btn" onClick={() => go(`${base}/journey/${a.dayId}?a=${a.id}`)}>{a.start && <b>{a.approxTime ? '~' : ''}{a.start}</b>} <Tx s="activities" r={a} f="title" /></button></li>
                   ))}
                   {!today.upcoming.length && <li className="muted small">{t('Không còn hoạt động nào cho hôm nay.')}</li>}
                 </ul>
@@ -141,7 +142,7 @@ export function JourneyHome() {
             <button key={d.id} className={`day-chip glass-card ${today.day?.id === d.id ? 'is-today' : ''} ${d.freeDay ? 'free' : ''}`} onClick={() => go(`${base}/journey/${d.id}`)}>
               <span className="day-n">{t('Ngày')}{' '}{d.index}</span>
               <span className="day-date">{fmtShort(d.date)}</span>
-              <span className="day-t">{d.title}</span>
+              <span className="day-t"><Tx s="days" r={d} f="title" /></span>
             </button>
           ))}
         </div>
@@ -166,7 +167,7 @@ export function JourneyHome() {
           <div className="opening-book">
             {isXmas ? <ChristmasTree animate lights /> : <div className="theme-deco static">{tk.deco}</div>}
           </div>
-          <p className="opening-title display">{j.title}</p>
+          <p className="opening-title display"><Tx s="journeys" r={j} f="title" /></p>
           <p className="opening-sub">{t('Every step has a story.')}</p>
           <div className="opening-actions">
             <button className="btn ghost small" onClick={() => setOpening(false)}>{t('Bỏ qua')}</button>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LuPlus, LuFileUp, LuMenu, LuLibrary, LuGlobe, LuShieldCheck, LuWifiOff, LuLock, LuSettings, LuPin, LuImage } from 'react-icons/lu';
+import { LuPlus, LuFileUp, LuMenu, LuLibrary, LuGlobe, LuShieldCheck, LuWifiOff, LuLock, LuSettings, LuPin, LuImage, LuLanguages } from 'react-icons/lu';
 import type { Journey } from '../../db/schema';
 import { BlobImg, go, Sheet, useStore } from '../../ui/core';
 import { t } from '../../lib/i18n';
@@ -9,6 +9,7 @@ import { BgLayer } from '../journey/Background';
 import { BookMark } from '../../art/BookMark';
 import { LanguageButton } from '../../ui/Language';
 import { APP_VERSION } from '../../ui/UpdateNotice';
+import { Tx } from '../../ui/contentTx';
 
 export function GlobalHome() {
   const journeys = useStore<Journey>('journeys');
@@ -53,7 +54,7 @@ export function GlobalHome() {
             <button key={j.id} className="journey-card" onClick={() => go(`/j/${j.id}`)} aria-label={t('Mở {0}', j.title)}>
               <div className="journey-cover">{j.settings.coverBlobId ? <BlobImg id={j.settings.coverBlobId} className="cover-img" /> : j.coverArt === 'xmas-skyline' ? <img src="./icons/xmas-skyline-emblem.svg" alt="" className="cover-img" /> : <span className="cover-emoji">{j.coverEmoji}</span>}</div>
               <div className="journey-meta">
-                <strong>{j.title}</strong>
+                <strong><Tx s="journeys" r={j} f="title" /></strong>
                 <span className="muted small">{j.destinations.join(' · ')}</span>
                 <span className="muted small">
                   {fmtShort(j.startDate)} – {fmtShort(j.endDate)}/{j.endDate.slice(0, 4)}
@@ -77,6 +78,7 @@ export function GlobalHome() {
           <button onClick={() => go('/library')}><LuLibrary /> {' '}{t('Thư viện hành trình')}</button>
           <button onClick={() => go('/world')}><LuGlobe /> {' '}{t('My Travel World')}</button>
           <button onClick={() => go('/backup')}><LuShieldCheck /> {' '}{t('Trung tâm bảo vệ kỷ niệm (sao lưu)')}</button>
+          <button onClick={() => go('/translate')}><LuLanguages /> {' '}{t('Dịch nội dung bạn nhập (4 ngôn ngữ)')}</button>
           <button onClick={() => go('/offline')}><LuWifiOff /> {' '}{t('Kiểm tra sẵn sàng offline')}</button>
           <button onClick={() => go('/vault')}><LuLock /> {' '}{t('Két riêng tư')}</button>
           <button onClick={() => go('/background/global')}><LuImage /> {' '}{t('Ảnh nền trang chủ')}</button>

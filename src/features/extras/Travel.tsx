@@ -9,6 +9,7 @@ import { meaningOf, PHRASES } from '../../lib/phrases';
 import { copyText, nowIso, uid } from '../../lib/util';
 import { speak, speechSupported } from '../../lib/speech';
 import { getLang, locale, t, tr } from '../../lib/i18n';
+import { Tx } from '../../ui/contentTx';
 
 // ───────── Large text card (show to drivers / staff)
 export function BigText({ zh, py, vi, onClose }: { zh: string; py?: string; vi?: string; onClose: () => void }) {
@@ -90,7 +91,7 @@ export function TransportPage() {
       <div className="stack-s">
         {cardPlaces.map((p: Place) => (
           <div key={p.id} className="glass-card list-row">
-            <span className="grow"><b>{p.name}</b><span className="zh xsmall block" lang="zh-CN">{p.addressZh}</span></span>
+            <span className="grow"><b><Tx s="places" r={p} f="name" /></b><span className="zh xsmall block" lang="zh-CN">{p.addressZh}</span></span>
             <button className="btn small" onClick={() => setBig({ zh: `请带我去：${p.addressZh}`, vi: t('Làm ơn đưa tôi đến {0}', p.name) })}>{t('Thẻ lớn')}</button>
             <button className="icon-btn" aria-label={t('Sao chép địa chỉ')} onClick={async () => toast((await copyText(p.addressZh!)) ? t('Đã sao chép') : t('Không sao chép được'))}><LuCopy size={16} /></button>
           </div>
@@ -100,17 +101,17 @@ export function TransportPage() {
       <div className="stack-s">
         {transport.map((a) => (
           <div key={a.id} className="glass-card">
-            <b>{a.start ? `${a.approxTime ? '~' : ''}${a.start} · ` : ''}{a.title}</b>
+            <b>{a.start ? `${a.approxTime ? '~' : ''}${a.start} · ` : ''}<Tx s="activities" r={a} f="title" /></b>
             {a.timeZoneLabel && <span className="tz-badge">{t(a.timeZoneLabel)}</span>}
             {a.nameZh && <p className="zh small" lang="zh-CN">{a.nameZh}</p>}
-            {a.descriptionVi && <p className="small muted">{a.descriptionVi}</p>}
+            {a.descriptionVi && <p className="small muted"><Tx s="activities" r={a} f="descriptionVi" /></p>}
           </div>
         ))}
       </div>
       <div className="glass-card small">
         <h4>{t('Ghi chú chung')}</h4>
         <ul>
-          {(j.transportNotes ?? [t('Tàu cao tốc: mang hộ chiếu (dùng để mua/soát vé).')]).map((n) => <li key={n}>{n}</li>)}
+          {(j.transportNotes ?? [t('Tàu cao tốc: mang hộ chiếu (dùng để mua/soát vé).')]).map((n, k) => <li key={k}>{j.transportNotes ? <Tx s="journeys" r={j} f={`transportNotes.${k}`} /> : n}</li>)}
         </ul>
         <p className="muted xsmall">{t('Giờ tàu và giá vé không được ứng dụng xác minh — hãy kiểm tra trong ứng dụng đặt vé chính thức.')}</p>
       </div>
@@ -172,7 +173,7 @@ export function WeatherPage() {
       </div>
       <div className="glass-card">
         <h3>{t('Ghi chú trang phục')}</h3>
-        <p className="muted xsmall">{j.wardrobeHint ?? t('Hãy xem dự báo thật trước khi đi.')}</p>
+        <p className="muted xsmall">{j.wardrobeHint ? <Tx s="journeys" r={j} f="wardrobeHint" /> : t('Hãy xem dự báo thật trước khi đi.')}</p>
         <textarea rows={8} value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={j.wardrobePlaceholder ?? t('Ngày 1: áo khoác + khăn…')} />
         <p className="muted xsmall">{t('Lưu tự động trên thiết bị. Xem thêm gợi ý dáng chụp trong tab Pose.')}</p>
       </div>
@@ -199,7 +200,7 @@ export function ChecklistPage() {
             <h3>{g}</h3>
             {list.map((i) => (
               <div key={i.id} className="check-row">
-                <label className="toggle-row grow"><input type="checkbox" checked={i.done} onChange={() => db.put('checklist', { ...i, done: !i.done })} /> <span className={i.done ? 'done' : ''}>{i.text}</span></label>
+                <label className="toggle-row grow"><input type="checkbox" checked={i.done} onChange={() => db.put('checklist', { ...i, done: !i.done })} /> <span className={i.done ? 'done' : ''}><Tx s="checklist" r={i} f="text" /></span></label>
                 <button className="icon-btn" aria-label={t('Xóa mục')} onClick={() => db.del('checklist', i.id)}><LuTrash2 size={14} /></button>
               </div>
             ))}

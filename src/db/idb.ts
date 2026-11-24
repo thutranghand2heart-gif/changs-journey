@@ -59,6 +59,10 @@ export function openDb(): Promise<IDBDatabase> {
           };
         };
       }
+      // v2 -> v3 (app 1.0.2): saved translations of user content. Purely additive.
+      if (old >= 1 && old < 3 && !db.objectStoreNames.contains('translations')) {
+        db.createObjectStore('translations', { keyPath: 'id' }).createIndex('journeyId', 'journeyId');
+      }
     };
     r.onsuccess = () => {
       const conn = r.result;

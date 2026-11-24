@@ -6,6 +6,7 @@ import { BlobImg, Confirm, Field, go, PageHeader, pickFiles, queryParam, Sheet, 
 import { useJourney } from './JourneyShell';
 import { uid } from '../../lib/util';
 import { t, tr } from '../../lib/i18n';
+import { Tx } from '../../ui/contentTx';
 
 export const POSE_CATS: Record<Pose['category'], string> = { hanfu: tr('Hán phục'), portrait: tr('Chân dung'), couple: tr('Đôi (tự chọn)'), street: tr('Đường phố'), night: tr('Ban đêm'), architecture: tr('Kiến trúc'), seasonal: tr('Theo mùa') };
 
@@ -30,7 +31,7 @@ export function PoseTab() {
           <button key={p.id} className="pose-card glass-card" onClick={() => setOpen(p.id)}>
             {p.refBlobIds[0] ? <BlobImg id={p.refBlobIds[0]} className="pose-img" /> : <div className="pose-art" aria-hidden="true">{p.category === 'hanfu' ? '🏮' : p.category === 'night' ? '🌃' : p.category === 'architecture' ? '🏛️' : p.category === 'seasonal' ? '❄️' : p.category === 'street' ? '🚶' : p.category === 'couple' ? '🤍' : '📷'}</div>}
             <span className="pose-cat">{t(POSE_CATS[p.category])}</span>
-            <b>{p.title}</b>
+            <b><Tx s="poses" r={p} f="title" /></b>
             {p.favorite && <span className="fav"><LuHeart size={14} /></span>}
           </button>
         ))}
@@ -101,7 +102,7 @@ function PoseSheet({ p, acts, onClose, isNew }: { p: Pose; acts: Activity[]; onC
           <div className="row gap-s wrap">
             {f.activityIds.map((id) => {
               const a = acts.find((x) => x.id === id);
-              return a ? <button key={id} className="btn small ghost" onClick={() => go(`/j/${p.journeyId}/journey/${a.dayId}?a=${a.id}`)}>→ {a.title}</button> : null;
+              return a ? <button key={id} className="btn small ghost" onClick={() => go(`/j/${p.journeyId}/journey/${a.dayId}?a=${a.id}`)}>→ <Tx s="activities" r={a} f="title" /></button> : null;
             })}
           </div>
         )}

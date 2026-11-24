@@ -6,6 +6,7 @@ import { Snow } from '../../art/Snow';
 import { todayIn } from '../../lib/time';
 import { updateJourneySettings } from '../../db/repo';
 import { t, tr } from '../../lib/i18n';
+import { Tx } from '../../ui/contentTx';
 
 const DEFAULT_ADVENT = [
   tr('Một tách trà nóng là khởi đầu của mọi câu chuyện.'), tr('Viết ra ba điều bạn mong chờ ở chuyến đi.'), tr('Chọn một chiếc khăn quàng thật ấm.'), tr('Tập nói: 圣诞快乐 — Shèngdàn kuàilè!'),
@@ -43,7 +44,7 @@ export function MagicPage() {
             <button key={n} className={`advent-door ${opened.includes(n) ? 'open' : ''}`} disabled={!canOpen(n)} onClick={() => open(n)} aria-label={t('Ngày {0}{1}', n, canOpen(n) ? '' : t(' (chưa đến ngày)'))}>{n}</button>
           ))}
         </div>
-        {door && <p className="advent-msg display">🎁 {door}/12 — {j.adventMessages?.[door - 1] ?? t(DEFAULT_ADVENT[door - 1])}</p>}
+        {door && <p className="advent-msg display">🎁 {door}/12 — {j.adventMessages?.[door - 1] ? <Tx s="journeys" r={j} f={`adventMessages.${door - 1}`} /> : t(DEFAULT_ADVENT[door - 1])}</p>}
       </section>
 
       <section className="glass-card">

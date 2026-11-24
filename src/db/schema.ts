@@ -2,7 +2,7 @@
 // and belongs to exactly one store. Views (Wallet, Budget, Food, Map…) reference
 // ids instead of copying records.
 
-export const SCHEMA_VERSION = 2; // v2 (app 1.0.1): attachments store, canonical booking records
+export const SCHEMA_VERSION = 3; // v2 (app 1.0.1): attachments store, canonical booking records · v3 (1.0.2): content translations
 export const BACKUP_FORMAT = 'chang-journey-backup';
 export const BACKUP_FORMAT_VERSION = 1;
 export const IMPORT_FORMAT = 'chang-journey-import';
@@ -307,12 +307,37 @@ export interface GlobalSettings {
   vault?: { salt: string; verifier: { iv: string; data: string }; iterations: number; createdAt: string };
   backups: BackupLog[];
   seeded: string[];
+  translation?: TranslationSettings;
 }
+/** A saved translation of one user-entered text field. Stored on the device → readable offline. */
+export interface ContentTranslation {
+  id: ID; // `${store}|${recordId}|${field}|${lang}`
+  journeyId: ID; // journey the record belongs to ('world' for Travel World entries)
+  store: StoreName;
+  recordId: ID;
+  field: string; // e.g. 'title', 'notes', 'transportNotes.1'
+  lang: UiLang;
+  text: string;
+  srcHash: string; // hash of the original text this translation was made from (detects edits → stale)
+  srcLang: UiLang;
+  source: 'machine' | 'manual';
+  provider?: 'mymemory';
+  at: string;
+}
+
+export interface TranslationSettings {
+  consentAt?: string; // explicit opt-in to send selected text to the online translation service
+  email?: string; // optional, raises the service's daily limit; stored only on this device
+  auto: boolean; // translate new/changed content automatically when online
+  categories: Record<string, boolean>;
+  usage?: { day: string; chars: number };
+}
+
 export interface BackupLog { id: ID; createdAt: string; fileName: string; sha256: string; encrypted: boolean; saved?: string; verified?: string; size: number }
 
 export const STORES = [
   'journeys', 'days', 'activities', 'places', 'docs', 'expenses', 'memories', 'food', 'poses',
-  'checklist', 'capsules', 'postcards', 'blobs', 'world', 'weather', 'settings', 'attachments',
+  'checklist', 'capsules', 'postcards', 'blobs', 'world', 'weather', 'settings', 'attachments', 'translations',
 ] as const;
 
 export type UiLang = 'vi' | 'zh' | 'en' | 'ko';

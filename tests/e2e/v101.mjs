@@ -5,6 +5,8 @@
 import { chromium } from 'playwright';
 import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+const NEW_VERSION = JSON.parse(readFileSync('package.json', 'utf8')).version;
 
 const { OLD_DIST, NEW_DIST = 'dist', SITE, BASE } = process.env;
 const APP = `${SITE}/changs-journey`;
@@ -70,13 +72,13 @@ await step('U2 deploy v1.0.1 over it: update delivered, data + file bytes preser
   for (; opens < 6; opens++) {
     await page.reload();
     await page.waitForTimeout(1500);
-    if ((await page.evaluate(() => document.documentElement.dataset.appVersion)) === '1.0.1') break;
+    if ((await page.evaluate(() => document.documentElement.dataset.appVersion)) === NEW_VERSION) break;
   }
   console.log(`   (v1.0.1 running after ${opens + 1} open(s))`);
   await page.getByTestId('update-notice').waitFor({ timeout: 8000 });
-  assert((await page.getByTestId('update-notice').innerText()).includes('1.0.1'), 'notice names 1.0.1');
+  assert((await page.getByTestId('update-notice').innerText()).includes(NEW_VERSION), 'notice names the new version');
   const ver = await idb(`(db, res) => res(db.version)`);
-  assert(ver === 2, 'IndexedDB v2, got ' + ver);
+  assert(ver >= 2, 'IndexedDB ≥ v2 (v1.0.2 adds v3), got ' + ver);
   assert(JSON.stringify((await all('journeys')).map((j) => j.id).sort()) === JSON.stringify(before.journeys), 'journey ids unchanged');
   assert((await all('docs')).length === before.docs, 'no doc lost');
   assert((await all('activities')).length === before.acts, 'no activity lost');
@@ -85,7 +87,7 @@ await step('U2 deploy v1.0.1 over it: update delivered, data + file bytes preser
   const atts = await all('attachments');
   assert(atts.length === 2 && atts.every((a) => before.blobs[a.blobId]), 'attachments point at the SAME blobs (no copies)');
   assert(atts.some((a) => a.lastOpenedOkAt), '"opened" status carried over');
-  assert(await page.locator('.version-tag').innerText().then((t) => t.includes('1.0.1')).catch(() => false) || true, 'version tag');
+  assert(await page.locator('.version-tag').innerText().then((t) => t.includes(NEW_VERSION)).catch(() => false) || true, 'version tag');
   await page.screenshot({ path: `${SHOTS}/U2-updated.png` });
 });
 

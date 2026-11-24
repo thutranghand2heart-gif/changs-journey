@@ -14,6 +14,7 @@ import { Cinema } from './Memories';
 import { useApp } from '../../ui/app-context';
 import { tokensFor } from '../../lib/themes';
 import { t } from '../../lib/i18n';
+import { Tx } from '../../ui/contentTx';
 
 // ───────── Postcard Studio
 export function PostcardStudio() {
@@ -224,7 +225,7 @@ export function EndingPage() {
       ) : (
         <div className="ending glass-card">
           <p className="display big-quote">{t('Until we meet again.')}</p>
-          <h2 className="display">{j.title}</h2>
+          <h2 className="display"><Tx s="journeys" r={j} f="title" /></h2>
           <p>{days.length} {' '}{t('ngày ·')}{' '}{places.filter((p) => p.visitedAt).length} {' '}{t('nơi đã đóng dấu chân ·')}{' '}{activities.filter((a) => a.status === 'completed').length} {' '}{t('hoạt động đã hoàn thành ·')}{' '}{mems.length} {' '}{t('kỷ niệm')}</p>
           <div className="row gap-s wrap center">
             <button className="btn" disabled={!photos.length} onClick={() => setFilm(true)}>{t('▶︎ Memory Film (trong ứng dụng)')}</button>
@@ -291,14 +292,14 @@ export function ExportPage() {
       </div>
       {printing && (
         <div ref={printRef} className="print-book printable">
-          <h1 className="display">{j.title}</h1>
+          <h1 className="display"><Tx s="journeys" r={j} f="title" /></h1>
           <p>{j.startDate} – {j.endDate}</p>
           {days.map((d) => {
             const list = chosen.filter((m) => m.dayId === d.id);
             if (!list.length) return null;
             return (
               <section key={d.id} className="print-day">
-                <h2>{t('Ngày')}{' '}{d.index}: {d.title}</h2>
+                <h2>{t('Ngày')}{' '}{d.index}: <Tx s="days" r={d} f="title" /></h2>
                 {list.map((m) => {
                   const txt = m.encrypted ? priv[m.id] : { title: m.title, body: m.body };
                   if (!txt) return null;
