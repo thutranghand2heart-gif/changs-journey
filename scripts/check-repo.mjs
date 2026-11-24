@@ -23,6 +23,12 @@ const walk = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.is
 const distFiles = distDir && existsSync(distDir) ? walk(distDir) : [];
 const files = [...repoFiles, ...distFiles];
 
+function decodeEscapes(t) {
+  return t
+    .replace(/\\u\{([0-9a-fA-F]{1,6})\}/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/\\x([0-9a-fA-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+}
 const SELF = new Set(['scripts/check-repo.mjs', 'privacy-fingerprints.json']);
 const allowedBinary = [/^public\/icons\//, /^tests\/fixtures\/ticket\.(png|pdf|svg)$/, /^dist\/icons\//]; // generated artwork + synthetic test ticket
 const allowedImportFile = /^tests\/fixtures\/demo-[\w-]+\.changjourney\.json$/; // fictional demo journey
@@ -52,11 +58,13 @@ for (const f of files) {
   if (/(^|\/)\.env(\.|$)/.test(rel)) problems.push(`${rel}: environment file`);
   if (/\.changjourney(\.json)?$/i.test(rel) && !allowedImportFile.test(rel)) problems.push(`${rel}: private journey import file must never be committed or deployed`);
   if (binary.test(rel)) {
-    if (!allowedBinary.some((r) => r.test(rel))) problems.push(`${rel}: personal media/document files must not be committed or deployed`);
+    const inDistIcons = distDir && rel.startsWith(distDir.replace(/\/$/, '') + '/icons/') && /\.(png|svg)$/.test(rel);
+    if (!inDistIcons && !allowedBinary.some((r) => r.test(rel))) problems.push(`${rel}: personal media/document files must not be committed or deployed`);
     continue;
   }
   if (statSync(f).size > 5_000_000 || SELF.has(rel)) continue;
-  const text = readFileSync(f, 'utf8');
+  // Build tools write non-ASCII as \uXXXX / \u{…} / \xNN escapes — decode so Chinese & Vietnamese text is visible to every check.
+  const text = decodeEscapes(readFileSync(f, 'utf8'));
   for (const [re, label] of secretPatterns) if (re.test(text)) problems.push(`${rel}: looks like a ${label}`);
   if (/"format"\s*:\s*"chang-journey-import"/.test(text) && !allowedImportFile.test(rel)) problems.push(`${rel}: contains a journey import file`);
   const addr = text.match(zhAddress);
