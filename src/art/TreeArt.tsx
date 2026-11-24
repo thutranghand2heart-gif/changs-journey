@@ -14,9 +14,8 @@ export function JourneyTree({ journey: j, animate, lights }: { journey: Journey;
   const url = useArtUrl('tree', 'disp');
   if (!url) return <ChristmasTree animate={animate} lights={lights} />;
   const ta = j.settings.treeArt ?? {};
-  const scale = ta.scale ?? 1;
   return (
-    <div className={`tree-art ${animate ? 'animated' : ''}`} style={{ transform: `translate(${ta.dx ?? 0}%, ${ta.dy ?? 0}%) scale(${scale})` }} data-testid="tree-art">
+    <div className={`tree-art ${animate ? 'animated' : ''}`} style={{ transform: `translate(${ta.dx ?? 0}%, ${ta.dy ?? 0}%)` }} data-testid="tree-art">
       <img src={url} alt="" draggable={false} decoding="async" />
       {lights && (
         <div className="tree-lights" aria-hidden="true">

@@ -19,7 +19,7 @@ export function MemoriesHub({ view = 'book' }: { view?: string }) {
   const base = `/j/${j.id}/memories`;
   const coverUrl = useArtUrl('cover', 'thumb');
   return (
-    <div className="page">
+    <div className="page area-paper">
       <PageHeader title={t('Kỷ niệm')} sub={t('Memory Book · Gallery · Keepsakes')} back={`/j/${j.id}`} right={<button className="icon-btn" aria-label={t('Viết kỷ niệm')} onClick={() => go(`${base}/new`)}><LuPlus size={20} /></button>} />
       <div className="seg">
         <button className={view === 'book' ? 'on' : ''} onClick={() => go(`${base}/book`)}><LuBookOpen size={14} /> {' '}{t('Sách')}</button>
@@ -103,7 +103,7 @@ function MemoryViewInner({ m, dayLabel }: { m: Memory; dayLabel?: { id: string; 
   const ct = useCt();
   const txt = useMemoryText(m);
   return (
-    <div className="page">
+    <div className="page area-paper">
       <PageHeader title={txt?.title || (m.privacy === 'private' ? t('Kỷ niệm riêng tư') : t('Kỷ niệm'))} sub={dayLabel ? t('Ngày {0}: {1}', dayLabel.index, ct('days', dayLabel, 'title')) : undefined} back={`/j/${j.id}/memories`} right={<button className="btn small" onClick={() => go(`/j/${j.id}/memories/${m.id}/edit`)}><LuPencil size={14} /> {' '}{t('Sửa')}</button>} />
       {!txt ? (
         <div className="stack"><p>{t('🔒 Đã mã hóa. Mở khóa Két để đọc.')}</p><button className="btn" onClick={() => go('/vault')}>{t('Mở Két')}</button></div>

@@ -4,8 +4,10 @@ export type Lang = 'vi' | 'zh' | 'en' | 'ko';
 type Dict = Record<string, string>;
 
 const vi: Dict = {
+  // English-named features get a Vietnamese label so the vi interface never mixes languages (V1.2.1)
+  'Food Passport': 'Hộ chiếu ẩm thực', Checklist: 'Danh sách chuẩn bị', Storybook: 'Sách nhật ký', 'Memory Book': 'Sổ kỷ niệm', Gallery: 'Thư viện ảnh',
   appName: 'Những bước chân của Chang', subtitle: 'Every step has a story.', addJourney: 'Thêm chuyến đi', myJourneys: 'Hành trình của tôi',
-  home: 'Home', journey: 'Journey', map: 'Map', pose: 'Pose', wallet: 'Wallet', library: 'Thư viện tính năng', search: 'Tìm kiếm',
+  home: 'Trang chủ', journey: 'Hành trình', map: 'Bản đồ', pose: 'Tạo dáng', wallet: 'Ví', library: 'Thư viện tính năng', search: 'Tìm kiếm',
   back: 'Quay lại', save: 'Lưu', cancel: 'Hủy', delete: 'Xóa', edit: 'Sửa', close: 'Đóng', copy: 'Sao chép', copied: 'Đã sao chép',
   today: 'Hôm nay', settings: 'Cài đặt', archived: 'Đã lưu trữ', menu: 'Menu', documents: 'Giấy tờ', budget: 'Ngân sách', memories: 'Kỷ niệm',
 };

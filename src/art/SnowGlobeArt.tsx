@@ -74,11 +74,21 @@ export function SnowGlobeArt({ reduced }: { reduced: boolean }) {
       stir.current = Math.max(0, s * 0.965 - 0.002);
       if (visible && !reduced) raf = requestAnimationFrame(step);
     };
-    const vis = () => { visible = !document.hidden; cancelAnimationFrame(raf); if (visible && !reduced) raf = requestAnimationFrame(step); };
+    const vis = () => { visible = !document.hidden && onScreen; cancelAnimationFrame(raf); if (visible && !reduced) raf = requestAnimationFrame(step); };
     document.addEventListener('visibilitychange', vis);
     addEventListener('resize', fit);
+    // pause while the globe is scrolled out of view → no work during scrolling elsewhere
+    let onScreen = true;
+    const io = new IntersectionObserver(([e]) => {
+      const was = onScreen;
+      onScreen = e.isIntersecting;
+      visible = onScreen && !document.hidden;
+      if (onScreen && !was) { cancelAnimationFrame(raf); if (!reduced) raf = requestAnimationFrame(step); }
+      if (!onScreen) cancelAnimationFrame(raf);
+    });
+    io.observe(c);
     step();
-    return () => { cancelAnimationFrame(raf); document.removeEventListener('visibilitychange', vis); removeEventListener('resize', fit); };
+    return () => { cancelAnimationFrame(raf); io.disconnect(); document.removeEventListener('visibilitychange', vis); removeEventListener('resize', fit); };
   }, [url, on, reduced, cx0, cy0, r0]);
 
   useEffect(() => {

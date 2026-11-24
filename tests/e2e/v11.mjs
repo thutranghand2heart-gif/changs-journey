@@ -116,13 +116,15 @@ await step('X5 train booking fields are editable and shown in the Wallet', async
   assert(tr.train?.trainNumber === 'G1234' && tr.train?.depStation === 'Demo Central', JSON.stringify(tr.train));
 });
 
-await step('X6 Pose Book: honest placeholder, view mode with guidance, favourite toggles', async () => {
+await step('X6 Pose Book: compact idea row (no fake photo), view mode with guidance, favourite toggles', async () => {
   await idb(`(db, res) => { const tx = db.transaction('poses', 'readwrite'); tx.objectStore('poses').put({ id: 'demo-pose', journeyId: 'demo-journey', category: 'night', title: 'Demo night portrait', description: 'Stand by the railing, lights behind.', favorite: false, notes: '', refBlobIds: [], activityIds: [], builtin: false, hands: 'Hands relaxed on the rail' }); tx.oncomplete = () => res(true); }`);
   await page.reload();
   await page.waitForTimeout(800);
   await go('#/j/demo-journey/pose');
-  assert(await page.locator('.pose-card .pose-ph').first().isVisible(), 'no honest placeholder');
-  const card = page.locator('.pose-card').first();
+  // V1.2.1: ideas without photos are compact rows (no large empty boxes, no fake sample photos)
+  assert(await page.locator('[data-testid="pose-ideas"] .pose-row').first().isVisible(), 'no honest idea row');
+  assert(!(await page.locator('.pose-card .pose-ph').count()), 'large empty placeholder still shown');
+  const card = page.locator('.pose-row').first();
   await card.waitFor();
   await card.click();
   await page.getByTestId('pose-view').waitFor();

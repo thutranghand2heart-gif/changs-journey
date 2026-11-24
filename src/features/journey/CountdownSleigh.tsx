@@ -86,9 +86,12 @@ export function CountdownSleigh({ journey: j, progress, leftLabel, rightLabel }:
 
   return (
     <div className="sleigh-countdown" data-testid="sleigh-countdown">
-      <div className="sleigh-track" ref={track} style={{ height: thumbH + 14 }}>
-        <div className="sleigh-rail" style={{ left: thumbW / 2, right: thumbW / 2, top: thumbH * 0.78 }}>
+      <div className="sleigh-track" ref={track} style={{ height: thumbH + 26 }}>
+        <div className="sleigh-lane" style={{ height: thumbH + 4 }} aria-hidden="true" />
+        <div className="sleigh-rail" style={{ left: thumbW / 2, right: thumbW / 2, top: thumbH + 12 }}>
           <div className="sleigh-rail-done" style={{ width: `${progress * 100}%` }} />
+          <span className="rail-mark start" />
+          <span className="rail-mark end">★</span>
         </div>
         {sparks.map((p) => (
           <span key={p.id} className="stardust" style={{ left: p.x, top: p.y, width: p.s, height: p.s, ['--dx' as any]: `${p.dx}px` }} />

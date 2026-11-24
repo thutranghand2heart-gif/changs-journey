@@ -67,8 +67,8 @@ export function WalletTab() {
   };
 
   return (
-    <div className="page">
-      <PageHeader title={t('Wallet')} sub={t('Vé, QR, đặt chỗ & giấy tờ')} right={<button className="icon-btn" aria-label={t('Thêm giấy tờ')} onClick={() => setAdding(true)}><LuPlus size={20} /></button>} />
+    <div className="page area-wallet">
+      <PageHeader title={t('wallet')} sub={t('Vé, QR, đặt chỗ & giấy tờ')} right={<button className="icon-btn" aria-label={t('Thêm giấy tờ')} onClick={() => setAdding(true)}><LuPlus size={20} /></button>} />
       <div className="row gap-s">
         <button className="btn small" onClick={() => setAdding(true)}><LuPlus size={14} /> {t('Thêm giấy tờ')}</button>
         <button className="btn small ghost" onClick={() => go(`/j/${j.id}/budget`)}><LuReceipt size={14} /> {t('Ngân sách')}</button>

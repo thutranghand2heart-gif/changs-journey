@@ -6,7 +6,7 @@ import { Confirm, PageHeader, Sheet, useStore, useToast } from '../../ui/core';
 import { useJourney } from '../journey/JourneyShell';
 import { useArtwork, ArtImg } from '../../ui/art';
 import { JourneyCover } from '../../ui/Cover';
-import { LayerEditor, newTextLayer, type Layer } from '../../ui/LayerEditor';
+import { LayerEditor, LayerPreview, newTextLayer, type Layer } from '../../ui/LayerEditor';
 import { publicMemories } from '../../lib/search';
 import { nowIso, uid } from '../../lib/util';
 import { t } from '../../lib/i18n';
@@ -27,6 +27,7 @@ export function StorybookPage() {
   const [turning, setTurning] = useState(false);
   const [edit, setEdit] = useState<string | null>(null);
   const [del, setDel] = useState<StoryPage | null>(null);
+  const [view, setView] = useState<string | null>(null);
   const page = art.assets['page'];
   const safe = (page?.safe as [number, number, number, number] | undefined) ?? SAFE_DEFAULT;
   const aspect = page ? page.height / page.width : 1448 / 1086;
@@ -54,10 +55,12 @@ export function StorybookPage() {
 
   if (!opened)
     return (
-      <div className="page storybook-intro">
+      <div className="page storybook-intro area-paper">
         <PageHeader title={t('Storybook')} back={`/j/${j.id}/memories`} />
+        <p className="muted center small">{t('Nhật ký của chuyến đi — chạm vào bìa để mở')}</p>
         <button className={`book-cover ${turning ? 'turning' : ''}`} data-testid="storybook-cover" onClick={open} aria-label={t('Mở sách')}>
-          <JourneyCover journey={j} />
+          <span className="book-inner" aria-hidden="true">{page ? <ArtImg id="page" v="disp" /> : <span className="le-bg-plain" />}</span>
+          <span className="book-front"><JourneyCover journey={j} /></span>
         </button>
         <div className="row gap-s center-row">
           <button className="btn primary" onClick={open}>{t('Mở sách')}</button>
@@ -68,15 +71,14 @@ export function StorybookPage() {
 
   const cur = pages.find((p) => p.id === edit);
   return (
-    <div className="page">
+    <div className="page area-paper">
       <PageHeader title={t('Storybook')} sub={t('{0} trang', pages.length)} back={`/j/${j.id}/memories`} />
       {!page && <p className="xsmall muted">{t('Giấy trang nhật ký Christmas Collection xuất hiện sau khi bạn nhập gói artwork (Cài đặt → Artwork).')}</p>}
       <div className="story-pages" data-testid="story-pages">
         {pages.map((p, i) => (
           <figure key={p.id} className="story-thumb">
-            <button className="story-thumb-img" onClick={() => setEdit(p.id)} aria-label={t('Trang {0}', i + 1)}>
-              {page ? <ArtImg id="page" v="thumb" /> : <div className="le-bg-plain" />}
-              <span className="story-thumb-text">{(p.layers as Layer[]).find((l) => l.kind === 'text' && l.text)?.text?.slice(0, 80) ?? ''}</span>
+            <button className="story-thumb-img" data-testid="story-thumb" onClick={() => setView(p.id)} aria-label={t('Xem trang {0}', i + 1)}>
+              <LayerPreview bg={{ assetId: p.bgAssetId, aspect, safe }} layers={p.layers as Layer[]} />
             </button>
             <figcaption className="row gap-s wrap">
               <span className="xsmall muted">{t('Trang {0}', i + 1)}</span>
@@ -91,6 +93,28 @@ export function StorybookPage() {
       </div>
       <button className="btn primary" data-testid="story-add" onClick={() => add()}><LuPlus size={14} /> {t('Thêm trang')}</button>
       <p className="xsmall muted">{t('Nếu chữ dài hơn khung, hãy thêm trang mới thay vì thu nhỏ chữ. Chữ nên nằm trong vùng giữa, tránh họa tiết ở các góc.')}</p>
+      {!pages.length && (
+        <div className="story-empty card">
+          <p>{t('Chưa có trang nào. Bấm “Thêm trang” để bắt đầu viết trên giấy nhật ký — thêm ảnh, khung ảnh và sticker tùy thích.')}</p>
+        </div>
+      )}
+      {view && (() => {
+        const vp = pages.find((p) => p.id === view);
+        if (!vp) return null;
+        const i = pages.indexOf(vp);
+        return (
+          <Sheet open onClose={() => setView(null)} title={t('Trang {0}', i + 1)} full>
+            <div className="story-view" data-testid="story-view">
+              <LayerPreview bg={{ assetId: vp.bgAssetId, aspect, safe }} layers={vp.layers as Layer[]} />
+              <div className="row gap-s wrap center-row">
+                <button className="btn small ghost" disabled={i === 0} onClick={() => setView(pages[i - 1].id)}>‹ {t('Trang trước')}</button>
+                <button className="btn small primary" onClick={() => { setView(null); setEdit(vp.id); }}><LuPencil size={14} /> {t('Sửa')}</button>
+                <button className="btn small ghost" disabled={i === pages.length - 1} onClick={() => setView(pages[i + 1].id)}>{t('Trang sau')} ›</button>
+              </div>
+            </div>
+          </Sheet>
+        );
+      })()}
       {cur && <PageEditor p={cur} aspect={aspect} safe={safe} photos={photos} onClose={() => setEdit(null)} />}
       <Confirm open={!!del} danger title={t('Xóa trang này?')} body={t('Chỉ xóa trang; ảnh gốc của bạn vẫn giữ nguyên.')} onConfirm={async () => void (del && (await db.del('storypages', del.id)))} onClose={() => setDel(null)} />
     </div>

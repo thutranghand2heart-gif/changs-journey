@@ -15,7 +15,7 @@ export function FoodPassport() {
   const cities = Array.from(new Set([...j.destinations, ...food.map((f) => f.city)]));
   return (
     <div className="page">
-      <PageHeader title={t('Food Passport')} sub={t('Hộ chiếu ẩm thực')} back={`/j/${j.id}`} right={<button className="icon-btn" aria-label={t('Thêm món')} onClick={() => setEdit({ id: uid('f'), journeyId: j.id, city: j.destinations[0] ?? '', dish: '', currency: j.currency, notes: '', photoBlobIds: [], stamped: false, createdAt: nowIso() })}><LuPlus size={20} /></button>} />
+      <PageHeader title={t('Food Passport')} back={`/j/${j.id}`} right={<button className="icon-btn" aria-label={t('Thêm món')} onClick={() => setEdit({ id: uid('f'), journeyId: j.id, city: j.destinations[0] ?? '', dish: '', currency: j.currency, notes: '', photoBlobIds: [], stamped: false, createdAt: nowIso() })}><LuPlus size={20} /></button>} />
       {cities.map((c) => {
         const list = food.filter((f) => f.city === c);
         return (

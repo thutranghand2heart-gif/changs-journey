@@ -70,7 +70,7 @@ function TabBar({ id, tab, xmas }: { id: string; tab: string; xmas: boolean }) {
         const on = tab === x.key;
         return (
           <button key={x.key} className={on ? 'on' : ''} aria-current={on ? 'page' : undefined} onClick={() => go(`/j/${id}${x.key ? '/' + x.key : ''}`)}>
-            {xmas ? <ArtIcon id={TAB_ART[x.key]} active={on} size={30} fallback={<Icon size={21} />} /> : <Icon size={21} />}
+            {xmas ? <ArtIcon id={TAB_ART[x.key]} active={on} size={38} fallback={<Icon size={21} />} /> : <Icon size={21} />}
             <span>{t(x.label)}</span>
           </button>
         );

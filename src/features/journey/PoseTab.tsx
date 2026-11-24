@@ -28,21 +28,23 @@ export function PoseTab() {
   const toast = useToast();
   const albums = Array.from(new Set([...DEFAULT_ALBUMS, ...(j.settings.poseAlbums ?? []), ...(poses.map((p) => p.album).filter(Boolean) as string[])]));
   const list = poses.filter((p) => (cat === 'all' || (cat === 'fav' ? p.favorite : p.category === cat)) && (!album || p.album === album));
+  const photoPoses = list.filter((p) => p.refBlobIds.length > 0);
+  const ideaPoses = list.filter((p) => !p.refBlobIds.length);
   const importMany = async () => {
     const fs = await pickFiles('image/*', true);
-    if (!fs.length || !album) return;
+    if (!fs.length) return;
     let n = poses.filter((p) => p.album === album).length;
     for (const file of fs) {
       const rec = await saveFileAsBlob(file, file.name, j.id);
       n++;
-      await db.put('poses', { id: uid('pose'), journeyId: j.id, category: 'portrait', title: `${t(album)} · ${n}`, description: '', favorite: false, notes: '', refBlobIds: [rec.id], activityIds: [], builtin: false, album } satisfies Pose);
+      await db.put('poses', { id: uid('pose'), journeyId: j.id, category: 'portrait', title: `${album ? t(album) : t('Ảnh tham khảo')} · ${n}`, description: '', favorite: false, notes: '', refBlobIds: [rec.id], activityIds: [], builtin: false, album: album ?? undefined } satisfies Pose);
     }
     toast(t('Đã nhập {0} ảnh vào album.', fs.length));
   };
   const sel = poses.find((p) => p.id === open);
   return (
-    <div className="page">
-      <PageHeader title={t('Pose Book')} sub={t('Cảm hứng & kế hoạch chụp ảnh')} right={<button className="icon-btn" aria-label={t('Thêm dáng')} onClick={() => setCreating(true)}><LuPlus size={20} /></button>} />
+    <div className="page area-album">
+      <PageHeader title={t('pose')} sub={t('Cảm hứng & kế hoạch chụp ảnh')} right={<button className="icon-btn" aria-label={t('Thêm dáng')} onClick={() => setCreating(true)}><LuPlus size={20} /></button>} />
       <div className="seg scroll-x">
         <button className={cat === 'all' ? 'on' : ''} onClick={() => setCat('all')}>{t('Tất cả')}</button>
         <button className={cat === 'fav' ? 'on' : ''} onClick={() => setCat('fav')}>{t('♥ Yêu thích')}</button>
@@ -53,31 +55,38 @@ export function PoseTab() {
         {albums.map((a) => <button key={a} className={album === a ? 'on' : ''} onClick={() => setAlbum(a)}>{t(a)}</button>)}
         <button data-testid="album-new" onClick={() => setNewAlbum('')}>{t('+ Album')}</button>
       </div>
-      {album && (
-        <div className="row gap-s wrap">
-          <button className="btn small" data-testid="album-import" onClick={importMany}><LuImage size={14} /> {t('Nhập nhiều ảnh vào “{0}”', t(album))}</button>
+      <button className="btn primary pose-import" data-testid="album-import" onClick={importMany}>
+        <LuImage size={16} /> {album ? t('Nhập nhiều ảnh vào “{0}”', t(album)) : t('Nhập nhiều ảnh tham khảo')}
+      </button>
+      {photoPoses.length > 0 && (
+        <div className="pose-grid" data-testid="pose-album-grid">
+          {photoPoses.map((p) => (
+            <button key={p.id} className={`pose-card cat-${p.category}`} onClick={() => setOpen(p.id)}>
+              <BlobImg id={p.refBlobIds[0]} className="pose-img" />
+              <span className="pose-meta">
+                <span className="pose-cat">{p.album ? t(p.album) : t(POSE_CATS[p.category])}{p.refBlobIds.length > 1 ? ` · ${p.refBlobIds.length}` : ''}</span>
+                <b><Tx s="poses" r={p} f="title" /></b>
+              </span>
+              {p.favorite && <span className="fav" aria-label={t('♥ Yêu thích')}><LuHeart size={16} /></span>}
+            </button>
+          ))}
         </div>
       )}
-      <div className="pose-grid">
-        {list.map((p) => (
-          <button key={p.id} className={`pose-card cat-${p.category}`} onClick={() => setOpen(p.id)}>
-            {p.refBlobIds[0] ? (
-              <BlobImg id={p.refBlobIds[0]} className="pose-img" />
-            ) : (
-              <div className="pose-ph">
-                <CatIcon c={p.category} size={30} />
-                <span className="pose-ph-text"><Tx s="poses" r={p} f="description" /></span>
-                <span className="pose-ph-add"><LuImage size={12} /> {t('Chưa có ảnh tham khảo')}</span>
-              </div>
-            )}
-            <span className="pose-meta">
-              <span className="pose-cat">{t(POSE_CATS[p.category])}{p.refBlobIds.length > 1 ? ` · ${p.refBlobIds.length}` : ''}</span>
-              <b><Tx s="poses" r={p} f="title" /></b>
-            </span>
-            {p.favorite && <span className="fav" aria-label={t('♥ Yêu thích')}><LuHeart size={16} /></span>}
-          </button>
-        ))}
-      </div>
+      {ideaPoses.length > 0 && (
+        <section className="pose-ideas" data-testid="pose-ideas">
+          <h3 className="section-title">{photoPoses.length ? t('Ý tưởng chưa có ảnh') : t('Ý tưởng tạo dáng')}</h3>
+          {ideaPoses.map((p) => (
+            <button key={p.id} className="pose-row" onClick={() => setOpen(p.id)}>
+              <span className="pose-row-ic"><CatIcon c={p.category} size={20} /></span>
+              <span className="grow">
+                <b><Tx s="poses" r={p} f="title" /></b>
+                <span className="small muted block clamp-1"><Tx s="poses" r={p} f="description" /></span>
+              </span>
+              {p.favorite && <LuHeart size={14} />}
+            </button>
+          ))}
+        </section>
+      )}
       {!list.length && <p className="muted center">{t('Chưa có dáng nào trong mục này.')}</p>}
       {sel && <PoseSheet p={sel} acts={activities} onClose={() => setOpen(null)} />}
       <Sheet open={newAlbum != null} onClose={() => setNewAlbum(null)} title={t('Album mới')}>

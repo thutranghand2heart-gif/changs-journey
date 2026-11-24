@@ -193,7 +193,7 @@ function TemplateCardItem({ c }: { c: Postcard }) {
   return (
     <figure className="postcard">
       <ArtImg id={c.templateId!} v="thumb" className="postcard-img" />
-      <figcaption className="xsmall muted">{c.message ? c.message.slice(0, 60) : t('Bản nháp')}</figcaption>
+      <figcaption className="xsmall muted">{(c.message || c.layers?.find((l) => l.kind === 'text' && l.text?.trim())?.text || '').slice(0, 60) || t('Bản nháp')}</figcaption>
       <div className="row gap-s">
         <button className="btn small" onClick={() => dispatchEvent(new CustomEvent('pc-edit', { detail: c.id }))}>{t('Mở / sửa')}</button>
         <button className="btn small ghost danger" onClick={() => setDel(true)}>{t('Xóa')}</button>

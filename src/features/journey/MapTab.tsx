@@ -42,7 +42,7 @@ export function MapTab() {
 
   return (
     <div className="page">
-      <PageHeader title={t('Map')} sub={t('Bản đồ minh họa · vị trí gần đúng')} right={<button className="icon-btn" aria-label={t('Thêm nơi muốn đến')} onClick={() => setAdding(true)}><LuPlus size={20} /></button>} />
+      <PageHeader title={t('map')} sub={t('Bản đồ minh họa · vị trí gần đúng')} right={<button className="icon-btn" aria-label={t('Thêm nơi muốn đến')} onClick={() => setAdding(true)}><LuPlus size={20} /></button>} />
       <div className="seg scroll-x">
         {cities.map((c) => <button key={c} className={c === city ? 'on' : ''} onClick={() => setCity(c)}>{c}</button>)}
       </div>

@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import {
   LuArrowLeft, LuSearch, LuPalette, LuVolume2, LuVolumeX, LuWallet, LuPhone, LuCopy, LuBookOpen, LuReceipt, LuUtensils, LuLanguages, LuListChecks,
   LuCar, LuCloudSun, LuSparkles, LuLayoutGrid, LuHeart, LuPlane, LuCalendar,
+  LuPenLine,
 } from 'react-icons/lu';
 import type { WalletDoc } from '../../db/schema';
 import { go, useStore, useToast } from '../../ui/core';
 import { useApp } from '../../ui/app-context';
 import { useJourney } from './JourneyShell';
 import { JourneyTree } from '../../art/TreeArt';
+import { useArtUrl } from '../../ui/art';
 import { JourneyCover } from '../../ui/Cover';
 import { Snow } from '../../art/Snow';
 import { isPlaying, onAudio, startAmbience, stopAmbience } from '../../art/audio';
@@ -35,6 +37,7 @@ export function JourneyHome() {
   const s = j.settings;
   const motionOff = reduced || s.animations === 'off';
   const isXmas = s.theme === 'christmas-emerald';
+  const treeArt = useArtUrl('tree', 'thumb');
   const [opening, setOpening] = useState(() => s.openingAnimation && !seenOpening.has(j.id) && !motionOff);
   const [playing, setPlaying] = useState(isPlaying());
   useEffect(() => onAudio(setPlaying), []);
@@ -63,9 +66,11 @@ export function JourneyHome() {
   return (
     <div className={`jhome ${isXmas ? 'xmas' : 'themed'}`}>
       {isXmas ? (
-        <div className="tree-stage" aria-hidden="true">
-          <JourneyTree journey={j} animate={!motionOff} lights={s.decorations} />
-        </div>
+        !treeArt && (
+          <div className="tree-stage" aria-hidden="true">
+            <JourneyTree journey={j} animate={!motionOff} lights={s.decorations} />
+          </div>
+        )
       ) : (
         <div className="theme-deco" aria-hidden="true">{tk.deco}</div>
       )}
@@ -81,14 +86,20 @@ export function JourneyHome() {
           <button className="icon-btn glass" aria-label={t('Giao diện & ảnh nền')} onClick={() => go(`${base}/appearance`)}><LuPalette size={20} /></button>
         </div>
 
-        <TxNudge journeyId={j.id} />
-        <section className="hero">
-          <p className="hero-kicker">{j.subtitle ? <Tx s="journeys" r={j} f="subtitle" /> : j.destinations.join(' · ')}</p>
-          <h1 className="hero-title display"><Tx s="journeys" r={j} f="title" /></h1>
-          <p className="hero-dates"><LuCalendar size={14} /> {fmtShort(j.startDate)} – {fmtShort(j.endDate)}, {j.endDate.slice(0, 4)}</p>
+        <section className={`hero ${isXmas && treeArt ? 'hero-tree' : ''}`} style={isXmas && treeArt ? ({ '--tree-w': `${Math.round(52 * (s.treeArt?.scale ?? 1))}%` } as any) : undefined}>
+          <div className="hero-text">
+            <p className="hero-kicker">{j.subtitle ? <Tx s="journeys" r={j} f="subtitle" /> : j.destinations.join(' · ')}</p>
+            <h1 className="hero-title display"><Tx s="journeys" r={j} f="title" /></h1>
+            <p className="hero-dates"><LuCalendar size={14} /> {fmtShort(j.startDate)} – {fmtShort(j.endDate)}, {j.endDate.slice(0, 4)}</p>
+          </div>
+          {isXmas && treeArt && (
+            <div className="hero-tree-art" aria-hidden="true">
+              <JourneyTree journey={j} animate={!motionOff} lights={s.decorations} />
+            </div>
+          )}
         </section>
 
-        <section className="glass-card today-card" aria-label={t('Hôm nay')}>
+        <section className="countdown-card" aria-label={t('Đếm ngược')}>
           {today.phase === 'before' && (
             <p className="countdown"><b className="big-num">{today.daysUntil}</b> {' '}{t('ngày nữa')}{isXmas && j.destinations[0] ? t(' là đến {0} 🎄', cityName(j.destinations[0], getLang()) ?? j.destinations[0]) : ''}</p>
           )}
@@ -98,6 +109,10 @@ export function JourneyHome() {
             leftLabel={today.phase === 'before' ? t('Hôm nay') : ''}
             rightLabel={today.phase === 'before' ? `${fmtShort(j.startDate)} · ${cityName(j.destinations[0] ?? '', getLang()) ?? j.destinations[0] ?? ''}` : t('Đã đến nơi ✨')}
           />
+        </section>
+
+        <TxNudge journeyId={j.id} />
+        <section className="glass-card today-card" aria-label={t('Hôm nay')}>
           {today.phase === 'after' && <p>{t('Chuyến đi đã khép lại. Những bước chân vẫn còn đây ✨')}</p>}
           {today.phase === 'during' && today.day && (
             <div>
@@ -162,7 +177,7 @@ export function JourneyHome() {
           {[
             [LuHeart, t('Kỷ niệm'), 'memories'], [LuReceipt, t('Ngân sách'), 'budget'], [LuUtensils, t('Food Passport'), 'food'], [LuLanguages, t('Ngôn ngữ'), 'language'],
             [LuListChecks, t('Checklist'), 'checklist'], [LuCar, t('Di chuyển'), 'transport'], [LuCloudSun, t('Thời tiết & trang phục'), 'weather'], [LuSparkles, isXmas ? t('Phép màu Giáng sinh') : t('Phép màu'), 'magic'],
-            [LuBookOpen, t('Storybook'), 'memories/book'], [LuLayoutGrid, t('Thư viện tính năng'), 'features'],
+            [LuBookOpen, t('Storybook'), 'storybook'], [LuPenLine, t('Viết kỷ niệm'), 'memories/new'],
           ].map(([Icon, label, path]: any) => (
             <button key={path} className="feature-tile glass-card" onClick={() => go(`${base}/${path}`)}>
               <Icon size={22} />
@@ -170,6 +185,15 @@ export function JourneyHome() {
             </button>
           ))}
         </div>
+
+        <button className="library-banner" data-testid="home-library" onClick={() => go(`${base}/features`)}>
+          <span className="library-ic"><LuLayoutGrid size={22} /></span>
+          <span className="grow">
+            <b>{t('Thư viện tính năng')}</b>
+            <span className="small muted block">{t('Tất cả công cụ của chuyến đi, chia theo nhóm')}</span>
+          </span>
+          <span aria-hidden="true">›</span>
+        </button>
       </div>
 
       {opening && (

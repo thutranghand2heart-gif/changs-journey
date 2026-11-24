@@ -24,6 +24,7 @@ export interface Layer {
   blobId?: string; // photo (user's own, stored once)
   assetId?: string; // sticker from the library (artwork referenced, never copied)
   aspect?: number; // h / w for images
+  frameId?: string; // photo shown inside one of the memory frames (artwork referenced, photo untouched)
 }
 export type FontKey = 'serif' | 'sans' | 'script' | 'cjk';
 export const FONTS: Record<FontKey, { label: string; css: string }> = {
@@ -46,7 +47,45 @@ function LayerImg({ l }: { l: Layer }) {
   const art = useArtwork();
   const id = l.kind === 'sticker' ? artBlob(art.assets[l.assetId!], 'disp') : l.blobId;
   const { url } = useBlobUrl(id);
-  return url ? <img src={url} alt="" draggable={false} /> : <span className="layer-missing">?</span>;
+  const fa = l.kind === 'photo' && l.frameId ? art.assets[l.frameId] : undefined;
+  const { url: frameUrl } = useBlobUrl(artBlob(fa, 'disp'));
+  const { url: maskUrl } = useBlobUrl(artBlob(fa, 'mask'));
+  if (!url) return <span className="layer-missing">?</span>;
+  if (fa && frameUrl) {
+    const m = maskUrl ? { WebkitMaskImage: `url(${maskUrl})`, maskImage: `url(${maskUrl})`, WebkitMaskSize: '100% 100%', maskSize: '100% 100%' } : {};
+    return (
+      <div className="le-framed" style={{ aspectRatio: `${fa.width} / ${fa.height}` }}>
+        <div className="le-framed-photo" style={m}><img src={url} alt="" draggable={false} /></div>
+        <img className="le-frame-over" src={frameUrl} alt="" draggable={false} />
+      </div>
+    );
+  }
+  return <img src={url} alt="" draggable={false} />;
+}
+
+/** Read-only rendering of a page (thumbnails & full-screen preview) — same layout as the editor. */
+export function LayerPreview({ bg, layers, className = '' }: { bg: EditorBg; layers: Layer[]; className?: string }) {
+  const art = useArtwork();
+  const ref = useRef<HTMLDivElement | null>(null);
+  const bgBlob = bg.assetId ? artBlob(art.assets[bg.assetId], 'disp') : bg.blobId;
+  const { url } = useBlobUrl(bgBlob);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => el.style.setProperty('--le-w', `${el.clientWidth / 100}px`));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className={`le-stage le-preview ${className}`} style={{ aspectRatio: `1 / ${bg.aspect}` }}>
+      {url ? <img className="le-bg" src={url} alt="" draggable={false} /> : <div className="le-bg le-bg-plain" />}
+      {layers.map((l) => (
+        <div key={l.id} className={`le-layer le-${l.kind}`} style={{ left: `${l.x * 100}%`, top: `${l.y * 100}%`, width: `${l.w * 100}%`, transform: `translate(-50%, -50%) rotate(${l.rot}deg)`, opacity: l.opacity }}>
+          {l.kind === 'text' ? (l.text ? <div className="le-text" style={{ fontFamily: FONTS[l.font ?? 'serif'].css, color: l.color, fontSize: `calc(${(l.size ?? 0.045) * 100} * var(--le-w, 3.5px))`, textAlign: l.align }}>{l.text}</div> : null) : <LayerImg l={l} />}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 /**
@@ -66,6 +105,7 @@ export function LayerEditor({ bg, layers, onChange, photoChoices = [], fileName,
   const { url: bgUrl } = useBlobUrl(bgBlob);
   const cur = layers.find((l) => l.id === sel);
   const charms = useMemo(() => Object.values(art.assets).filter((a) => a.group === 'charm'), [art]);
+  const frames = useMemo(() => Object.values(art.assets).filter((a) => a.group === 'frame'), [art]);
   useEffect(() => {
     const el = stage.current;
     if (!el) return;
@@ -128,7 +168,7 @@ export function LayerEditor({ bg, layers, onChange, photoChoices = [], fileName,
 
   const exportPng = async (): Promise<Blob | null> => {
     try {
-      return await renderLayers(bgBlob, bg.aspect, layers, (id) => artBlob(art.assets[id], 'orig'));
+      return await renderLayers(bgBlob, bg.aspect, layers, (id) => artBlob(art.assets[id], 'orig'), (id) => ({ frame: artBlob(art.assets[id], 'orig'), mask: artBlob(art.assets[id], 'mask') }));
     } catch {
       toast(t('Không xuất được ảnh.'));
       return null;
@@ -208,6 +248,12 @@ export function LayerEditor({ bg, layers, onChange, photoChoices = [], fileName,
               <label className="small">{t('Cỡ chữ')} <input type="range" min="0.02" max="0.12" step="0.002" value={cur.size ?? 0.045} onChange={(e: any) => patch({ size: +e.target.value }, false)} /></label>
             </>
           )}
+          {cur.kind === 'photo' && frames.length > 0 && (
+            <div className="le-frame-pick" data-testid="le-frame-pick">
+              <button className={!cur.frameId ? 'on' : ''} onClick={() => patch({ frameId: undefined })}>{t('Không khung')}</button>
+              {frames.map((f) => <button key={f.id} className={cur.frameId === f.id ? 'on' : ''} aria-label={f.name} onClick={() => patch({ frameId: f.id })}><ArtImg id={f.id} v="thumb" /></button>)}
+            </div>
+          )}
           <label className="small">{t('Kích thước')} <input type="range" min="0.06" max="1" step="0.01" value={cur.w} onChange={(e: any) => patch({ w: +e.target.value }, false)} /></label>
           <label className="small">{t('Xoay')} <input type="range" min="-180" max="180" step="1" value={cur.rot} onChange={(e: any) => patch({ rot: +e.target.value }, false)} /></label>
           <label className="small">{t('Độ trong suốt')} <input type="range" min="0.1" max="1" step="0.05" value={cur.opacity} onChange={(e: any) => patch({ opacity: +e.target.value }, false)} /></label>
@@ -265,7 +311,7 @@ async function loadImg(blobId: string | undefined): Promise<HTMLImageElement | n
 }
 
 /** Render background + layers into a PNG (background drawn at its own resolution, capped at 2400 px). */
-export async function renderLayers(bgBlob: string | undefined, aspect: number, layers: Layer[], stickerBlob: (assetId: string) => string | undefined): Promise<Blob> {
+export async function renderLayers(bgBlob: string | undefined, aspect: number, layers: Layer[], stickerBlob: (assetId: string) => string | undefined, frameBlobs?: (frameId: string) => { frame?: string; mask?: string }): Promise<Blob> {
   const bgImg = await loadImg(bgBlob);
   const W = Math.min(2400, bgImg?.naturalWidth ?? 1600);
   const H = Math.round(W * aspect);
@@ -292,6 +338,21 @@ export async function renderLayers(bgBlob: string | undefined, aspect: number, l
       const x = l.align === 'center' ? 0 : l.align === 'right' ? w / 2 : -w / 2;
       const top = (-lines.length * lh) / 2;
       lines.forEach((ln, i) => g.fillText(ln, x, top + i * lh));
+    } else if (l.kind === 'photo' && l.frameId && frameBlobs) {
+      const fb = frameBlobs(l.frameId);
+      const [ph, fr, mk] = await Promise.all([loadImg(l.blobId), loadImg(fb.frame), loadImg(fb.mask)]);
+      if (ph && fr) {
+        const h = w * (fr.naturalHeight / fr.naturalWidth);
+        const off = document.createElement('canvas');
+        off.width = Math.round(w);
+        off.height = Math.round(h);
+        const o = off.getContext('2d')!;
+        const sc = Math.max(off.width / ph.naturalWidth, off.height / ph.naturalHeight);
+        o.drawImage(ph, (off.width - ph.naturalWidth * sc) / 2, (off.height - ph.naturalHeight * sc) / 2, ph.naturalWidth * sc, ph.naturalHeight * sc);
+        if (mk) { o.globalCompositeOperation = 'destination-in'; o.drawImage(mk, 0, 0, off.width, off.height); o.globalCompositeOperation = 'source-over'; }
+        o.drawImage(fr, 0, 0, off.width, off.height);
+        g.drawImage(off, -w / 2, -h / 2, w, h);
+      }
     } else {
       const img = await loadImg(l.kind === 'sticker' ? stickerBlob(l.assetId!) : l.blobId);
       if (img) {

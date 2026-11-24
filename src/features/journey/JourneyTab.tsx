@@ -30,8 +30,8 @@ export function JourneyTab({ dayId }: { dayId?: string }) {
     toast(t('Đã thêm ngày'));
   };
   return (
-    <div className="page">
-      <PageHeader title={t('Journey')} sub={t('{0} · {1} ngày', ct('journeys', j, 'title'), days.length)} />
+    <div className="page area-journey">
+      <PageHeader title={t('journey')} sub={t('{0} · {1} ngày', ct('journeys', j, 'title'), days.length)} />
       <div className="day-cards">
         {days.map((d) => (
           <div key={d.id} className={`day-card glass-card ${d.freeDay ? 'free' : ''}`}>
@@ -86,7 +86,7 @@ function DayView({ day }: { day: Day }) {
   const act = acts.find((a) => a.id === open);
 
   return (
-    <div className="page">
+    <div className="page area-journey">
       <PageHeader
         title={<span className="display">{t('Ngày')}{' '}{day.index}: <Tx s="days" r={day} f="title" /></span>}
         sub={`${fmtDateVi(day.date)}${day.subtitle ? ' · ' + ct('days', day, 'subtitle').replace(/^[^·]*·\s*/, '') : ''}`}
